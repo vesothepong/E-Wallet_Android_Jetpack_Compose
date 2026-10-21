@@ -10,6 +10,13 @@ import com.example.e_wallet.model.Wallet
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+sealed class DepositResult {
+    data class Success(val transaction: Transaction, val newBalance: Long) : DepositResult()
+    data class Error(val message: String) : DepositResult()
+}
 
 interface WalletRepository {
     val currentUser: StateFlow<User>
@@ -17,6 +24,12 @@ interface WalletRepository {
     val transactions: StateFlow<List<Transaction>>
     val beneficiaries: StateFlow<List<Beneficiary>>
     val unreadNotificationsCount: StateFlow<Int>
+
+    suspend fun deposit(
+        amountCents: Long,
+        note: String = "Simulated bank deposit",
+        sourceDescription: String = "Demo Bank Top-up (•••• 4812)"
+    ): DepositResult
 
     fun resetDemoData()
 }
@@ -206,6 +219,52 @@ class InMemoryWalletRepository : WalletRepository {
     private val _unreadNotificationsCount = MutableStateFlow(3)
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
 
+    private val depositMutex = Mutex()
+
+    override suspend fun deposit(
+        amountCents: Long,
+        note: String,
+        sourceDescription: String
+    ): DepositResult = depositMutex.withLock {
+        if (amountCents <= 0L) {
+            return DepositResult.Error("Deposit amount must be greater than $0.00.")
+        }
+        val maxLimitCents = 500000L // $5,000.00 demo limit
+        if (amountCents > maxLimitCents) {
+            return DepositResult.Error("Deposit exceeds maximum demo limit of $5,000.00 per transaction.")
+        }
+
+        val currentWlt = _currentWallet.value
+        val newBalance = currentWlt.currentBalance + amountCents
+        val newAvailable = currentWlt.availableBalance + amountCents
+
+        val timestamp = System.currentTimeMillis()
+        val randomSuffix = (1000..9999).random()
+        val tx = Transaction(
+            transactionId = "tx_dep_${timestamp}_$randomSuffix",
+            type = TransactionType.DEPOSIT,
+            senderId = null,
+            senderName = sourceDescription,
+            receiverId = _currentUser.value.userId,
+            receiverName = _currentUser.value.fullName,
+            amount = amountCents,
+            fee = 0L,
+            timestamp = timestamp,
+            description = note.ifBlank { "Simulated Demo Bank Top-up" },
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = "REF-DEP-${timestamp.toString().takeLast(6)}-$randomSuffix"
+        )
+
+        // Single atomic state update
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        return DepositResult.Success(tx, newBalance)
+    }
+
     override fun resetDemoData() {
         _currentUser.value = defaultUser
         _currentWallet.value = defaultWallet
@@ -214,3 +273,11 @@ class InMemoryWalletRepository : WalletRepository {
         _unreadNotificationsCount.value = 3
     }
 }
+
+/**
+ * Shared provider ensuring ViewModels observe the same in-memory repository instance.
+ */
+object WalletRepositoryProvider {
+    val repository: WalletRepository by lazy { InMemoryWalletRepository() }
+}
+

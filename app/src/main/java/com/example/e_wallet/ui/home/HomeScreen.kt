@@ -34,6 +34,7 @@ import com.example.e_wallet.ui.components.QuickActionsSection
 import com.example.e_wallet.ui.components.RecentBeneficiariesRow
 import com.example.e_wallet.ui.components.RecentTransactionsSection
 import com.example.e_wallet.ui.components.WalletCard
+import com.example.e_wallet.ui.deposit.DepositBottomSheet
 import com.example.e_wallet.ui.theme.EWalletTheme
 
 @Composable
@@ -44,6 +45,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var currentTab by remember { mutableStateOf(BottomNavTab.HOME) }
+    var showDepositSheet by remember { mutableStateOf(false) }
 
     // Show snackbar feedback when triggered
     LaunchedEffect(uiState.snackbarMessage) {
@@ -61,16 +63,20 @@ fun HomeScreen(
                 currentTab = currentTab,
                 onTabSelected = { selected ->
                     currentTab = selected
-                    if (selected != BottomNavTab.HOME) {
-                        viewModel.onQuickAction(
-                            when (selected) {
-                                BottomNavTab.WALLET -> HomeQuickAction.DEPOSIT
-                                BottomNavTab.SCAN -> HomeQuickAction.SCAN_QR
-                                BottomNavTab.HISTORY -> HomeQuickAction.SEND
-                                BottomNavTab.PROFILE -> HomeQuickAction.RECEIVE
-                                else -> HomeQuickAction.SEND
-                            }
-                        )
+                    when (selected) {
+                        BottomNavTab.HOME -> { /* already on home */ }
+                        BottomNavTab.WALLET -> {
+                            showDepositSheet = true
+                        }
+                        BottomNavTab.SCAN -> {
+                            viewModel.onQuickAction(HomeQuickAction.SCAN_QR)
+                        }
+                        BottomNavTab.HISTORY -> {
+                            viewModel.onSeeAllTransactionsClicked()
+                        }
+                        BottomNavTab.PROFILE -> {
+                            viewModel.onProfileClicked()
+                        }
                     }
                 }
             )
@@ -79,16 +85,34 @@ fun HomeScreen(
         HomeScreenContent(
             uiState = uiState,
             onToggleBalance = viewModel::toggleBalanceVisibility,
-            onQuickAction = viewModel::onQuickAction,
+            onQuickAction = { action ->
+                if (action == HomeQuickAction.DEPOSIT) {
+                    showDepositSheet = true
+                } else {
+                    viewModel.onQuickAction(action)
+                }
+            },
             onFilterSelect = viewModel::setTransactionFilter,
             onBeneficiaryClick = viewModel::onBeneficiaryClicked,
-            onAddBeneficiaryClick = { viewModel.onQuickAction(HomeQuickAction.SEND) },
+            onAddBeneficiaryClick = viewModel::onAddBeneficiaryClicked,
             onNotificationClick = viewModel::onNotificationClicked,
             onResetDemoClick = viewModel::resetDemoData,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = viewModel::onSeeAllTransactionsClicked,
             modifier = Modifier.padding(innerPadding)
         )
+
+        if (showDepositSheet) {
+            DepositBottomSheet(
+                onDismiss = {
+                    showDepositSheet = false
+                    if (currentTab == BottomNavTab.WALLET) {
+                        currentTab = BottomNavTab.HOME
+                    }
+                },
+                repository = viewModel.repository
+            )
+        }
     }
 }
 

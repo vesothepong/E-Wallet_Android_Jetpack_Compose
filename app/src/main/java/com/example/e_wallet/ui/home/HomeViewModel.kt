@@ -2,14 +2,15 @@ package com.example.e_wallet.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.e_wallet.data.InMemoryWalletRepository
 import com.example.e_wallet.data.WalletRepository
+import com.example.e_wallet.data.WalletRepositoryProvider
 import com.example.e_wallet.model.Beneficiary
 import com.example.e_wallet.model.Transaction
 import com.example.e_wallet.model.TransactionStatus
 import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.model.User
 import com.example.e_wallet.model.Wallet
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,8 +70,11 @@ private data class UiControls(
 )
 
 class HomeViewModel(
-    private val repository: WalletRepository = InMemoryWalletRepository()
+    val repository: WalletRepository = WalletRepositoryProvider.repository,
+    coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope = coroutineScope ?: viewModelScope
 
     private val _isBalanceVisible = MutableStateFlow(true)
     private val _selectedFilter = MutableStateFlow(TransactionFilter.ALL)
@@ -114,14 +118,14 @@ class HomeViewModel(
         val recentTxs = userTransactions.take(10)
 
         val filtered = when (filter) {
-            TransactionFilter.ALL -> recentTxs
-            TransactionFilter.SEND -> recentTxs.filter {
+            TransactionFilter.ALL -> userTransactions
+            TransactionFilter.SEND -> userTransactions.filter {
                 it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT
             }
-            TransactionFilter.RECEIVE -> recentTxs.filter { it.type == TransactionType.RECEIVE }
-            TransactionFilter.DEPOSIT -> recentTxs.filter { it.type == TransactionType.DEPOSIT }
-            TransactionFilter.WITHDRAW -> recentTxs.filter { it.type == TransactionType.WITHDRAW }
-        }
+            TransactionFilter.RECEIVE -> userTransactions.filter { it.type == TransactionType.RECEIVE }
+            TransactionFilter.DEPOSIT -> userTransactions.filter { it.type == TransactionType.DEPOSIT }
+            TransactionFilter.WITHDRAW -> userTransactions.filter { it.type == TransactionType.WITHDRAW }
+        }.take(10)
 
         return HomeUiState(
             currentUser = user,
@@ -177,7 +181,7 @@ class HomeViewModel(
             snackbarMsg = ui.snackbarMessage
         )
     }.stateIn(
-        scope = viewModelScope,
+        scope = scope,
         started = SharingStarted.Eagerly,
         initialValue = computeState(
             repository.currentUser.value,
@@ -215,8 +219,16 @@ class HomeViewModel(
         _snackbarMessage.value = "Quick transfer to ${beneficiary.displayName} selected"
     }
 
+    fun onAddBeneficiaryClicked() {
+        _snackbarMessage.value = "Add new beneficiary opened"
+    }
+
     fun onNotificationClicked() {
         _snackbarMessage.value = "Notifications opened"
+    }
+
+    fun onProfileClicked() {
+        _snackbarMessage.value = "User Profile & Settings opened"
     }
 
     fun onSeeAllTransactionsClicked() {
@@ -228,7 +240,7 @@ class HomeViewModel(
     }
 
     fun refreshDashboard() {
-        viewModelScope.launch {
+        scope.launch {
             _isRefreshing.value = true
             delay(600) // Simulated slight network sync
             _isRefreshing.value = false

@@ -21,7 +21,8 @@ object Formatters {
     }
 
     fun formatSignedAmount(amountInCents: Long, type: TransactionType): String {
-        val formatted = formatCentsToCurrency(amountInCents)
+        val absCents = kotlin.math.abs(amountInCents)
+        val formatted = formatCentsToCurrency(absCents)
         return when (type) {
             TransactionType.RECEIVE, TransactionType.DEPOSIT -> "+$formatted"
             TransactionType.SEND, TransactionType.WITHDRAW, TransactionType.QR_PAYMENT -> "-$formatted"
@@ -29,23 +30,31 @@ object Formatters {
     }
 
     fun formatTransactionTime(timestamp: Long): String {
-        val now = Calendar.getInstance()
-        val timeCal = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val todayCal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val txDayCal = Calendar.getInstance().apply {
+            timeInMillis = timestamp
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val dayDiff = (todayCal.timeInMillis - txDayCal.timeInMillis) / (24 * 60 * 60 * 1000L)
 
         val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
         val formattedTime = timeFormat.format(Date(timestamp))
 
-        return if (now.get(Calendar.YEAR) == timeCal.get(Calendar.YEAR) &&
-            now.get(Calendar.DAY_OF_YEAR) == timeCal.get(Calendar.DAY_OF_YEAR)
-        ) {
-            "Today, $formattedTime"
-        } else if (now.get(Calendar.YEAR) == timeCal.get(Calendar.YEAR) &&
-            now.get(Calendar.DAY_OF_YEAR) - timeCal.get(Calendar.DAY_OF_YEAR) == 1
-        ) {
-            "Yesterday, $formattedTime"
-        } else {
-            val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-            dateFormat.format(Date(timestamp))
+        return when (dayDiff) {
+            0L -> "Today, $formattedTime"
+            1L -> "Yesterday, $formattedTime"
+            else -> {
+                val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                dateFormat.format(Date(timestamp))
+            }
         }
     }
 

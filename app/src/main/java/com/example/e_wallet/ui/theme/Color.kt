@@ -26,3 +26,9 @@ val DarkSurface = Color(0xFF1E293B)
 val DarkSurfaceVariant = Color(0xFF334155)
 val DarkTextPrimary = Color(0xFFF8FAFC)
 val DarkTextSecondary = Color(0xFF94A3B8)
+
+// Neutral Colors for Sheets & Components
+val NeutralDark = Color(0xFF0F172A)
+val NeutralLight = Color(0xFFE2E8F0)
+val NeutralMuted = Color(0xFF64748B)
+val SurfaceCard = Color(0xFFF8FAFC)

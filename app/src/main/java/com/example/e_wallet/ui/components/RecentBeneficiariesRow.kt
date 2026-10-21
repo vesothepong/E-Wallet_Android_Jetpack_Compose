@@ -104,7 +104,10 @@ fun RecentBeneficiariesRow(
                 }
             }
 
-            items(beneficiaries) { beneficiary ->
+            items(
+                items = beneficiaries,
+                key = { it.beneficiaryId }
+            ) { beneficiary ->
                 BeneficiaryItem(
                     beneficiary = beneficiary,
                     onClick = { onBeneficiaryClick(beneficiary) }

@@ -58,9 +58,11 @@ fun HomeTopBar(
                 Box(contentAlignment = Alignment.Center) {
                     val initials = user?.fullName
                         ?.split(" ")
+                        ?.filter { it.isNotBlank() }
                         ?.mapNotNull { it.firstOrNull()?.toString() }
                         ?.take(2)
-                        ?.joinToString("") ?: "AM"
+                        ?.joinToString("")
+                        ?.ifBlank { "AM" } ?: "AM"
 
                     Text(
                         text = initials,

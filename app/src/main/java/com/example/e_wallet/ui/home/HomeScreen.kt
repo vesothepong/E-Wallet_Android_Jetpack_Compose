@@ -1,0 +1,191 @@
+package com.example.e_wallet.ui.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.example.e_wallet.model.Beneficiary
+import com.example.e_wallet.model.Transaction
+import com.example.e_wallet.ui.components.BottomNavTab
+import com.example.e_wallet.ui.components.DashboardStatsSection
+import com.example.e_wallet.ui.components.DemoWarningBanner
+import com.example.e_wallet.ui.components.HomeTopBar
+import com.example.e_wallet.ui.components.PocketPayBottomBar
+import com.example.e_wallet.ui.components.QuickActionsSection
+import com.example.e_wallet.ui.components.RecentBeneficiariesRow
+import com.example.e_wallet.ui.components.RecentTransactionsSection
+import com.example.e_wallet.ui.components.WalletCard
+import com.example.e_wallet.ui.theme.EWalletTheme
+
+@Composable
+fun HomeScreen(
+    viewModel: HomeViewModel = remember { HomeViewModel() },
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var currentTab by remember { mutableStateOf(BottomNavTab.HOME) }
+
+    // Show snackbar feedback when triggered
+    LaunchedEffect(uiState.snackbarMessage) {
+        uiState.snackbarMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnackbar()
+        }
+    }
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            PocketPayBottomBar(
+                currentTab = currentTab,
+                onTabSelected = { selected ->
+                    currentTab = selected
+                    if (selected != BottomNavTab.HOME) {
+                        viewModel.onQuickAction(
+                            when (selected) {
+                                BottomNavTab.WALLET -> HomeQuickAction.DEPOSIT
+                                BottomNavTab.SCAN -> HomeQuickAction.SCAN_QR
+                                BottomNavTab.HISTORY -> HomeQuickAction.SEND
+                                BottomNavTab.PROFILE -> HomeQuickAction.RECEIVE
+                                else -> HomeQuickAction.SEND
+                            }
+                        )
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        HomeScreenContent(
+            uiState = uiState,
+            onToggleBalance = viewModel::toggleBalanceVisibility,
+            onQuickAction = viewModel::onQuickAction,
+            onFilterSelect = viewModel::setTransactionFilter,
+            onBeneficiaryClick = viewModel::onBeneficiaryClicked,
+            onAddBeneficiaryClick = { viewModel.onQuickAction(HomeQuickAction.SEND) },
+            onNotificationClick = viewModel::onNotificationClicked,
+            onResetDemoClick = viewModel::resetDemoData,
+            onTransactionClick = viewModel::onTransactionClicked,
+            onSeeAllClick = viewModel::onSeeAllTransactionsClicked,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@Composable
+fun HomeScreenContent(
+    uiState: HomeUiState,
+    onToggleBalance: () -> Unit,
+    onQuickAction: (HomeQuickAction) -> Unit,
+    onFilterSelect: (TransactionFilter) -> Unit,
+    onBeneficiaryClick: (Beneficiary) -> Unit,
+    onAddBeneficiaryClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onResetDemoClick: () -> Unit,
+    onTransactionClick: (Transaction) -> Unit,
+    onSeeAllClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
+        // 1. Top Bar: Greeting, Avatar, Notification & Reset
+        HomeTopBar(
+            user = uiState.currentUser,
+            unreadNotificationsCount = uiState.unreadNotificationsCount,
+            onNotificationClick = onNotificationClick,
+            onResetDemoClick = onResetDemoClick
+        )
+
+        // 2. Educational Demo Simulator Banner
+        DemoWarningBanner()
+
+        // 3. Wallet Card with Balance Hide/Show and In/Out mini stats
+        WalletCard(
+            wallet = uiState.wallet,
+            isBalanceVisible = uiState.isBalanceVisible,
+            totalReceivedCents = uiState.totalReceivedCents,
+            totalSentCents = uiState.totalSentCents,
+            onToggleBalanceVisibility = onToggleBalance
+        )
+
+        // 4. Quick Actions: Send, Receive, Deposit, Withdraw
+        QuickActionsSection(
+            onActionClick = onQuickAction
+        )
+
+        // 5. Financial Overview: Derived Dashboard KPIs
+        DashboardStatsSection(
+            totalReceivedCents = uiState.totalReceivedCents,
+            totalSentCents = uiState.totalSentCents,
+            totalDepositCents = uiState.totalDepositCents,
+            totalWithdrawCents = uiState.totalWithdrawCents,
+            completedTransactionCount = uiState.completedTransactionCount,
+            isBalanceVisible = uiState.isBalanceVisible
+        )
+
+        // 6. Quick Send: Favorite Beneficiaries
+        RecentBeneficiariesRow(
+            beneficiaries = uiState.beneficiaries,
+            onBeneficiaryClick = onBeneficiaryClick,
+            onAddBeneficiaryClick = onAddBeneficiaryClick
+        )
+
+        // 7. Recent Transactions with Filtering (All, Sent, Received, Deposits, Withdrawals)
+        RecentTransactionsSection(
+            transactions = uiState.filteredTransactions,
+            selectedFilter = uiState.selectedFilter,
+            onFilterSelect = onFilterSelect,
+            onTransactionClick = onTransactionClick,
+            onSeeAllClick = onSeeAllClick
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun HomeScreenPreview() {
+    EWalletTheme {
+        HomeScreenContent(
+            uiState = HomeUiState(),
+            onToggleBalance = {},
+            onQuickAction = {},
+            onFilterSelect = {},
+            onBeneficiaryClick = {},
+            onAddBeneficiaryClick = {},
+            onNotificationClick = {},
+            onResetDemoClick = {},
+            onTransactionClick = {},
+            onSeeAllClick = {}
+        )
+    }
+}

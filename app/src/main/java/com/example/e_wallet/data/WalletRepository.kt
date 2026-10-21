@@ -1,0 +1,216 @@
+package com.example.e_wallet.data
+
+import com.example.e_wallet.model.AccountStatus
+import com.example.e_wallet.model.Beneficiary
+import com.example.e_wallet.model.Transaction
+import com.example.e_wallet.model.TransactionStatus
+import com.example.e_wallet.model.TransactionType
+import com.example.e_wallet.model.User
+import com.example.e_wallet.model.Wallet
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+interface WalletRepository {
+    val currentUser: StateFlow<User>
+    val currentWallet: StateFlow<Wallet>
+    val transactions: StateFlow<List<Transaction>>
+    val beneficiaries: StateFlow<List<Beneficiary>>
+    val unreadNotificationsCount: StateFlow<Int>
+
+    fun resetDemoData()
+}
+
+/**
+ * In-memory single-source-of-truth repository for PocketPay simulation.
+ * Ensures wallet balance and transaction history are strictly consistent.
+ */
+class InMemoryWalletRepository : WalletRepository {
+
+    private val defaultUser = User(
+        userId = "usr_demo_001",
+        fullName = "Alex Morgan",
+        phoneNumber = "+1 (555) 234-5678",
+        email = "alex.morgan@pocketpay.demo",
+        accountStatus = AccountStatus.ACTIVE,
+        role = "VERIFIED_DEMO_USER"
+    )
+
+    private val defaultWallet = Wallet(
+        walletId = "wlt_001",
+        walletNumber = "PKP-8829-4102",
+        userId = "usr_demo_001",
+        currentBalance = 245000L, // $2,450.00
+        availableBalance = 245000L,
+        currency = "USD"
+    )
+
+    private val defaultBeneficiaries = listOf(
+        Beneficiary(
+            beneficiaryId = "ben_001",
+            ownerUserId = "usr_demo_001",
+            receiverUserId = "usr_demo_002",
+            displayName = "Sarah Chen",
+            walletNumber = "PKP-1049-5521",
+            avatarInitials = "SC",
+            isFavorite = true
+        ),
+        Beneficiary(
+            beneficiaryId = "ben_002",
+            ownerUserId = "usr_demo_001",
+            receiverUserId = "usr_demo_003",
+            displayName = "David Miller",
+            walletNumber = "PKP-3392-8810",
+            avatarInitials = "DM",
+            isFavorite = true
+        ),
+        Beneficiary(
+            beneficiaryId = "ben_003",
+            ownerUserId = "usr_demo_001",
+            receiverUserId = "usr_demo_004",
+            displayName = "Emma Watson",
+            walletNumber = "PKP-7721-3904",
+            avatarInitials = "EW",
+            isFavorite = true
+        ),
+        Beneficiary(
+            beneficiaryId = "ben_004",
+            ownerUserId = "usr_demo_001",
+            receiverUserId = "usr_demo_005",
+            displayName = "John Doe",
+            walletNumber = "PKP-4482-1983",
+            avatarInitials = "JD",
+            isFavorite = false
+        )
+    )
+
+    private fun generateDefaultTransactions(): List<Transaction> {
+        val now = System.currentTimeMillis()
+        val hour = 3600 * 1000L
+        val day = 24 * hour
+
+        return listOf(
+            Transaction(
+                transactionId = "tx_1001",
+                type = TransactionType.RECEIVE,
+                senderId = "usr_demo_002",
+                senderName = "Sarah Chen",
+                receiverId = "usr_demo_001",
+                receiverName = "Alex Morgan",
+                amount = 15000L, // $150.00
+                fee = 0L,
+                timestamp = now - 2 * hour,
+                description = "Dinner split share 🍕",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261021-001"
+            ),
+            Transaction(
+                transactionId = "tx_1002",
+                type = TransactionType.DEPOSIT,
+                senderId = null,
+                senderName = "Demo Bank Top-up",
+                receiverId = "usr_demo_001",
+                receiverName = "Alex Morgan",
+                amount = 50000L, // $500.00
+                fee = 0L,
+                timestamp = now - 26 * hour,
+                description = "Simulated bank deposit",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261020-002"
+            ),
+            Transaction(
+                transactionId = "tx_1003",
+                type = TransactionType.SEND,
+                senderId = "usr_demo_001",
+                senderName = "Alex Morgan",
+                receiverId = "usr_demo_003",
+                receiverName = "David Miller",
+                amount = 4500L, // $45.00
+                fee = 0L,
+                timestamp = now - 30 * hour,
+                description = "Movie tickets 🎬",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261020-003"
+            ),
+            Transaction(
+                transactionId = "tx_1004",
+                type = TransactionType.QR_PAYMENT,
+                senderId = "usr_demo_001",
+                senderName = "Alex Morgan",
+                receiverId = "mch_001",
+                receiverName = "Starbucks Coffee",
+                amount = 850L, // $8.50
+                fee = 0L,
+                timestamp = now - 2 * day,
+                description = "Morning Caramel Macchiato ☕",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261019-004"
+            ),
+            Transaction(
+                transactionId = "tx_1005",
+                type = TransactionType.WITHDRAW,
+                senderId = "usr_demo_001",
+                senderName = "Alex Morgan",
+                receiverId = null,
+                receiverName = "ATM Cash Withdrawal",
+                amount = 10000L, // $100.00
+                fee = 0L,
+                timestamp = now - 3 * day,
+                description = "Simulated ATM Cashout",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261018-005"
+            ),
+            Transaction(
+                transactionId = "tx_1006",
+                type = TransactionType.SEND,
+                senderId = "usr_demo_001",
+                senderName = "Alex Morgan",
+                receiverId = "usr_demo_004",
+                receiverName = "Emma Watson",
+                amount = 2500L, // $25.00
+                fee = 0L,
+                timestamp = now - 4 * day,
+                description = "Book club subscription 📚",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261017-006"
+            ),
+            Transaction(
+                transactionId = "tx_1007",
+                type = TransactionType.RECEIVE,
+                senderId = "usr_demo_005",
+                senderName = "John Doe",
+                receiverId = "usr_demo_001",
+                receiverName = "Alex Morgan",
+                amount = 8000L, // $80.00
+                fee = 0L,
+                timestamp = now - 5 * day,
+                description = "Freelance consulting share",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-20261016-007"
+            )
+        )
+    }
+
+    private val _currentUser = MutableStateFlow(defaultUser)
+    override val currentUser: StateFlow<User> = _currentUser.asStateFlow()
+
+    private val _currentWallet = MutableStateFlow(defaultWallet)
+    override val currentWallet: StateFlow<Wallet> = _currentWallet.asStateFlow()
+
+    private val _transactions = MutableStateFlow(generateDefaultTransactions())
+    override val transactions: StateFlow<List<Transaction>> = _transactions.asStateFlow()
+
+    private val _beneficiaries = MutableStateFlow(defaultBeneficiaries)
+    override val beneficiaries: StateFlow<List<Beneficiary>> = _beneficiaries.asStateFlow()
+
+    private val _unreadNotificationsCount = MutableStateFlow(3)
+    override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
+
+    override fun resetDemoData() {
+        _currentUser.value = defaultUser
+        _currentWallet.value = defaultWallet
+        _transactions.value = generateDefaultTransactions()
+        _beneficiaries.value = defaultBeneficiaries
+        _unreadNotificationsCount.value = 3
+    }
+}

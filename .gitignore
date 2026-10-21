@@ -1,0 +1,13 @@
+# Gradle generated files
+.gradle/
+**/build/
+
+# Kotlin generated cache
+.kotlin/
+
+# Android native build files
+.externalNativeBuild/
+.cxx/
+
+# Local machine configuration
+local.properties

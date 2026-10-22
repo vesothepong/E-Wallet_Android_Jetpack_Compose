@@ -36,6 +36,7 @@ import com.example.e_wallet.ui.components.RecentTransactionsSection
 import com.example.e_wallet.ui.components.WalletCard
 import com.example.e_wallet.ui.deposit.DepositBottomSheet
 import com.example.e_wallet.ui.withdraw.WithdrawBottomSheet
+import com.example.e_wallet.ui.send.SendMoneyBottomSheet
 import com.example.e_wallet.ui.theme.EWalletTheme
 
 @Composable
@@ -48,6 +49,8 @@ fun HomeScreen(
     var currentTab by remember { mutableStateOf(BottomNavTab.HOME) }
     var showDepositSheet by remember { mutableStateOf(false) }
     var showWithdrawSheet by remember { mutableStateOf(false) }
+    var showSendSheet by remember { mutableStateOf(false) }
+    var selectedBeneficiaryForSend by remember { mutableStateOf<Beneficiary?>(null) }
 
     // Show snackbar feedback when triggered
     LaunchedEffect(uiState.snackbarMessage) {
@@ -89,20 +92,42 @@ fun HomeScreen(
             onToggleBalance = viewModel::toggleBalanceVisibility,
             onQuickAction = { action ->
                 when (action) {
+                    HomeQuickAction.SEND -> {
+                        selectedBeneficiaryForSend = null
+                        showSendSheet = true
+                    }
                     HomeQuickAction.DEPOSIT -> showDepositSheet = true
                     HomeQuickAction.WITHDRAW -> showWithdrawSheet = true
                     else -> viewModel.onQuickAction(action)
                 }
             },
             onFilterSelect = viewModel::setTransactionFilter,
-            onBeneficiaryClick = viewModel::onBeneficiaryClicked,
-            onAddBeneficiaryClick = viewModel::onAddBeneficiaryClicked,
+            onBeneficiaryClick = { beneficiary ->
+                selectedBeneficiaryForSend = beneficiary
+                showSendSheet = true
+            },
+            onAddBeneficiaryClick = {
+                // Open send sheet ready to add custom receiver
+                selectedBeneficiaryForSend = null
+                showSendSheet = true
+            },
             onNotificationClick = viewModel::onNotificationClicked,
             onResetDemoClick = viewModel::resetDemoData,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = viewModel::onSeeAllTransactionsClicked,
             modifier = Modifier.padding(innerPadding)
         )
+
+        if (showSendSheet) {
+            SendMoneyBottomSheet(
+                initialBeneficiary = selectedBeneficiaryForSend,
+                onDismiss = {
+                    showSendSheet = false
+                    selectedBeneficiaryForSend = null
+                },
+                repository = viewModel.repository
+            )
+        }
 
         if (showDepositSheet) {
             DepositBottomSheet(

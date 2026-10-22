@@ -1,7 +1,6 @@
 package com.example.e_wallet.ui.withdraw
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,7 +53,6 @@ import com.example.e_wallet.ui.theme.NeutralDark
 import com.example.e_wallet.ui.theme.NeutralLight
 import com.example.e_wallet.ui.theme.NeutralMuted
 import com.example.e_wallet.ui.theme.PrimaryBlue
-import com.example.e_wallet.ui.theme.SecondaryTeal
 import com.example.e_wallet.ui.theme.SuccessGreen
 import com.example.e_wallet.ui.theme.SurfaceCard
 import com.example.e_wallet.ui.theme.WarningAmber

@@ -574,4 +574,116 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val Search: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Search",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(15.5f, 14f)
+                lineTo(14.71f, 14f)
+                lineTo(14.43f, 13.73f)
+                curveTo(15.41f, 12.59f, 16f, 11.11f, 16f, 9.5f)
+                curveTo(16f, 5.91f, 13.09f, 3f, 9.5f, 3f)
+                curveTo(5.91f, 3f, 3f, 5.91f, 3f, 9.5f)
+                curveTo(3f, 13.09f, 5.91f, 16f, 9.5f, 16f)
+                curveTo(11.11f, 16f, 12.59f, 15.41f, 13.73f, 14.43f)
+                lineTo(14f, 14.71f)
+                lineTo(14f, 15.5f)
+                lineTo(19f, 20.49f)
+                lineTo(20.49f, 19f)
+                lineTo(15.5f, 14f)
+                close()
+                moveTo(9.5f, 14f)
+                curveTo(7.01f, 14f, 5f, 11.99f, 5f, 9.5f)
+                curveTo(5f, 7.01f, 7.01f, 5f, 9.5f, 5f)
+                curveTo(11.99f, 5f, 14f, 7.01f, 14f, 9.5f)
+                curveTo(14f, 11.99f, 11.99f, 14f, 9.5f, 14f)
+                close()
+            }
+        }.build()
+    }
+
+    val Lock: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Lock",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(18f, 8f)
+                lineTo(17f, 8f)
+                lineTo(17f, 6f)
+                curveTo(17f, 3.24f, 14.76f, 1f, 12f, 1f)
+                curveTo(9.24f, 1f, 7f, 3.24f, 7f, 6f)
+                lineTo(7f, 8f)
+                lineTo(6f, 8f)
+                curveTo(4.9f, 8f, 4f, 8.9f, 4f, 10f)
+                lineTo(4f, 20f)
+                curveTo(4f, 21.1f, 4.9f, 22f, 6f, 22f)
+                lineTo(18f, 22f)
+                curveTo(19.1f, 22f, 20f, 21.1f, 20f, 20f)
+                lineTo(20f, 10f)
+                curveTo(20f, 8.9f, 19.1f, 8f, 18f, 8f)
+                close()
+                moveTo(12f, 17f)
+                curveTo(10.9f, 17f, 10f, 16.1f, 10f, 15f)
+                curveTo(10f, 13.9f, 10.9f, 13f, 12f, 13f)
+                curveTo(13.1f, 13f, 14f, 13.9f, 14f, 15f)
+                curveTo(14f, 16.1f, 13.1f, 17f, 12f, 17f)
+                close()
+                moveTo(15.1f, 8f)
+                lineTo(8.9f, 8f)
+                lineTo(8.9f, 6f)
+                curveTo(8.9f, 4.29f, 10.29f, 2.9f, 12f, 2.9f)
+                curveTo(13.71f, 2.9f, 15.1f, 4.29f, 15.1f, 6f)
+                lineTo(15.1f, 8f)
+                close()
+            }
+        }.build()
+    }
+
+    val Backspace: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Backspace",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(22f, 3f)
+                lineTo(7f, 3f)
+                curveTo(6.31f, 3f, 5.7f, 3.43f, 5.42f, 4.07f)
+                lineTo(0f, 12f)
+                lineTo(5.42f, 19.93f)
+                curveTo(5.7f, 20.57f, 6.31f, 21f, 7f, 21f)
+                lineTo(22f, 21f)
+                curveTo(23.1f, 21f, 24f, 20.1f, 24f, 19f)
+                lineTo(24f, 5f)
+                curveTo(24f, 3.9f, 23.1f, 3f, 22f, 3f)
+                close()
+                moveTo(19f, 15.59f)
+                lineTo(17.59f, 17f)
+                lineTo(14f, 13.41f)
+                lineTo(10.41f, 17f)
+                lineTo(9f, 15.59f)
+                lineTo(12.59f, 12f)
+                lineTo(9f, 8.41f)
+                lineTo(10.41f, 7f)
+                lineTo(14f, 10.59f)
+                lineTo(17.59f, 7f)
+                lineTo(19f, 8.41f)
+                lineTo(15.41f, 12f)
+                lineTo(19f, 15.59f)
+                close()
+            }
+        }.build()
+    }
 }

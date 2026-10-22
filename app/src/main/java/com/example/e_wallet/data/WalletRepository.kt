@@ -12,10 +12,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.example.e_wallet.util.Formatters
 
 sealed class DepositResult {
     data class Success(val transaction: Transaction, val newBalance: Long) : DepositResult()
     data class Error(val message: String) : DepositResult()
+}
+
+sealed class WithdrawResult {
+    data class Success(val transaction: Transaction, val newBalance: Long) : WithdrawResult()
+    data class Error(val message: String) : WithdrawResult()
 }
 
 interface WalletRepository {
@@ -30,6 +36,13 @@ interface WalletRepository {
         note: String = "Simulated bank deposit",
         sourceDescription: String = "Demo Bank Top-up (•••• 4812)"
     ): DepositResult
+
+    suspend fun withdraw(
+        amountCents: Long,
+        note: String = "Simulated ATM Cashout",
+        destinationDescription: String = "ATM Cashout (Cardless Demo)",
+        feeCents: Long = 0L
+    ): WithdrawResult
 
     fun resetDemoData()
 }
@@ -220,6 +233,7 @@ class InMemoryWalletRepository : WalletRepository {
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
 
     private val depositMutex = Mutex()
+    private val withdrawMutex = Mutex()
 
     override suspend fun deposit(
         amountCents: Long,
@@ -263,6 +277,58 @@ class InMemoryWalletRepository : WalletRepository {
         _transactions.value = listOf(tx) + _transactions.value
 
         return DepositResult.Success(tx, newBalance)
+    }
+
+    override suspend fun withdraw(
+        amountCents: Long,
+        note: String,
+        destinationDescription: String,
+        feeCents: Long
+    ): WithdrawResult = withdrawMutex.withLock {
+        if (amountCents <= 0L) {
+            return WithdrawResult.Error("Withdrawal amount must be greater than $0.00.")
+        }
+        val maxLimitCents = 200000L // $2,000.00 demo limit
+        if (amountCents > maxLimitCents) {
+            return WithdrawResult.Error("Withdrawal exceeds maximum demo limit of $2,000.00 per transaction.")
+        }
+
+        val currentWlt = _currentWallet.value
+        val totalDebit = amountCents + feeCents
+        if (currentWlt.availableBalance < totalDebit) {
+            return WithdrawResult.Error(
+                "Insufficient funds. Available balance is ${Formatters.formatCentsToCurrency(currentWlt.availableBalance)}, but required total is ${Formatters.formatCentsToCurrency(totalDebit)}."
+            )
+        }
+
+        val newBalance = currentWlt.currentBalance - totalDebit
+        val newAvailable = currentWlt.availableBalance - totalDebit
+
+        val timestamp = System.currentTimeMillis()
+        val randomSuffix = (1000..9999).random()
+        val tx = Transaction(
+            transactionId = "tx_wdr_${timestamp}_$randomSuffix",
+            type = TransactionType.WITHDRAW,
+            senderId = _currentUser.value.userId,
+            senderName = _currentUser.value.fullName,
+            receiverId = null,
+            receiverName = destinationDescription,
+            amount = amountCents,
+            fee = feeCents,
+            timestamp = timestamp,
+            description = note.ifBlank { "Simulated ATM Cashout" },
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = "REF-WDR-${timestamp.toString().takeLast(6)}-$randomSuffix"
+        )
+
+        // Single atomic state update
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        return WithdrawResult.Success(tx, newBalance)
     }
 
     override fun resetDemoData() {

@@ -35,6 +35,7 @@ import com.example.e_wallet.ui.components.RecentBeneficiariesRow
 import com.example.e_wallet.ui.components.RecentTransactionsSection
 import com.example.e_wallet.ui.components.WalletCard
 import com.example.e_wallet.ui.deposit.DepositBottomSheet
+import com.example.e_wallet.ui.withdraw.WithdrawBottomSheet
 import com.example.e_wallet.ui.theme.EWalletTheme
 
 @Composable
@@ -46,6 +47,7 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var currentTab by remember { mutableStateOf(BottomNavTab.HOME) }
     var showDepositSheet by remember { mutableStateOf(false) }
+    var showWithdrawSheet by remember { mutableStateOf(false) }
 
     // Show snackbar feedback when triggered
     LaunchedEffect(uiState.snackbarMessage) {
@@ -86,10 +88,10 @@ fun HomeScreen(
             uiState = uiState,
             onToggleBalance = viewModel::toggleBalanceVisibility,
             onQuickAction = { action ->
-                if (action == HomeQuickAction.DEPOSIT) {
-                    showDepositSheet = true
-                } else {
-                    viewModel.onQuickAction(action)
+                when (action) {
+                    HomeQuickAction.DEPOSIT -> showDepositSheet = true
+                    HomeQuickAction.WITHDRAW -> showWithdrawSheet = true
+                    else -> viewModel.onQuickAction(action)
                 }
             },
             onFilterSelect = viewModel::setTransactionFilter,
@@ -109,6 +111,15 @@ fun HomeScreen(
                     if (currentTab == BottomNavTab.WALLET) {
                         currentTab = BottomNavTab.HOME
                     }
+                },
+                repository = viewModel.repository
+            )
+        }
+
+        if (showWithdrawSheet) {
+            WithdrawBottomSheet(
+                onDismiss = {
+                    showWithdrawSheet = false
                 },
                 repository = viewModel.repository
             )

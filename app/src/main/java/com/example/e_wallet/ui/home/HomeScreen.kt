@@ -35,6 +35,7 @@ import com.example.e_wallet.ui.components.RecentBeneficiariesRow
 import com.example.e_wallet.ui.components.RecentTransactionsSection
 import com.example.e_wallet.ui.components.WalletCard
 import com.example.e_wallet.ui.deposit.DepositBottomSheet
+import com.example.e_wallet.ui.receive.ReceiveBottomSheet
 import com.example.e_wallet.ui.withdraw.WithdrawBottomSheet
 import com.example.e_wallet.ui.send.SendMoneyBottomSheet
 import com.example.e_wallet.ui.theme.EWalletTheme
@@ -51,6 +52,7 @@ fun HomeScreen(
     var showDepositSheet by remember { mutableStateOf(false) }
     var showWithdrawSheet by remember { mutableStateOf(false) }
     var showSendSheet by remember { mutableStateOf(false) }
+    var showReceiveSheet by remember { mutableStateOf(false) }
     var selectedBeneficiaryForSend by remember { mutableStateOf<Beneficiary?>(null) }
 
     // Show snackbar feedback when triggered
@@ -97,6 +99,7 @@ fun HomeScreen(
                         selectedBeneficiaryForSend = null
                         showSendSheet = true
                     }
+                    HomeQuickAction.RECEIVE -> showReceiveSheet = true
                     HomeQuickAction.DEPOSIT -> showDepositSheet = true
                     HomeQuickAction.WITHDRAW -> showWithdrawSheet = true
                     else -> viewModel.onQuickAction(action)
@@ -148,6 +151,12 @@ fun HomeScreen(
                     showWithdrawSheet = false
                 },
                 repository = viewModel.repository
+            )
+        }
+
+        if (showReceiveSheet) {
+            ReceiveBottomSheet(
+                onDismiss = { showReceiveSheet = false }
             )
         }
     }

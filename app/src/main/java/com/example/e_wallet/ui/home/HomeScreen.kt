@@ -42,6 +42,7 @@ import com.example.e_wallet.ui.theme.EWalletTheme
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = remember { HomeViewModel() },
+    onNavigateToHistory: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -77,7 +78,7 @@ fun HomeScreen(
                             viewModel.onQuickAction(HomeQuickAction.SCAN_QR)
                         }
                         BottomNavTab.HISTORY -> {
-                            viewModel.onSeeAllTransactionsClicked()
+                            onNavigateToHistory()
                         }
                         BottomNavTab.PROFILE -> {
                             viewModel.onProfileClicked()
@@ -114,7 +115,7 @@ fun HomeScreen(
             onNotificationClick = viewModel::onNotificationClicked,
             onResetDemoClick = viewModel::resetDemoData,
             onTransactionClick = viewModel::onTransactionClicked,
-            onSeeAllClick = viewModel::onSeeAllTransactionsClicked,
+            onSeeAllClick = onNavigateToHistory,
             modifier = Modifier.padding(innerPadding)
         )
 

@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.e_wallet.ui.home.HomeScreen
+import com.example.e_wallet.ui.navigation.AppNavGraph
 import com.example.e_wallet.ui.theme.EWalletTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EWalletTheme {
-                HomeScreen()
+                AppNavGraph()
             }
         }
     }

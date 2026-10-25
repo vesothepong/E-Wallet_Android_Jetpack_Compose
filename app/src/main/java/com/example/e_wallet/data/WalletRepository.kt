@@ -29,6 +29,11 @@ sealed class SendResult {
     data class Error(val message: String) : SendResult()
 }
 
+sealed class QrPaymentResult {
+    data class Success(val transaction: Transaction, val newBalance: Long) : QrPaymentResult()
+    data class Error(val message: String) : QrPaymentResult()
+}
+
 interface WalletRepository {
     val currentUser: StateFlow<User>
     val currentWallet: StateFlow<Wallet>
@@ -57,6 +62,15 @@ interface WalletRepository {
         note: String = "",
         feeCents: Long = 0L
     ): SendResult
+
+    suspend fun payQr(
+        receiverWalletNumber: String,
+        receiverName: String,
+        receiverId: String,
+        amountCents: Long,
+        note: String = "",
+        feeCents: Long = 0L
+    ): QrPaymentResult
 
     fun searchReceivers(query: String): List<Beneficiary>
 
@@ -251,6 +265,7 @@ class InMemoryWalletRepository : WalletRepository {
     private val depositMutex = Mutex()
     private val withdrawMutex = Mutex()
     private val sendMutex = Mutex()
+    private val qrPayMutex = Mutex()
 
     override suspend fun deposit(
         amountCents: Long,
@@ -407,6 +422,67 @@ class InMemoryWalletRepository : WalletRepository {
         _transactions.value = listOf(tx) + _transactions.value
 
         return SendResult.Success(tx, newBalance)
+    }
+
+    override suspend fun payQr(
+        receiverWalletNumber: String,
+        receiverName: String,
+        receiverId: String,
+        amountCents: Long,
+        note: String,
+        feeCents: Long
+    ): QrPaymentResult = qrPayMutex.withLock {
+        if (amountCents <= 0L) {
+            return QrPaymentResult.Error("Payment amount must be greater than $0.00.")
+        }
+        val maxLimitCents = 250000L // $2,500.00 demo QR limit
+        if (amountCents > maxLimitCents) {
+            return QrPaymentResult.Error("Payment exceeds maximum demo limit of $2,500.00 per transaction.")
+        }
+
+        // Self-payment validation
+        if (receiverId == _currentUser.value.userId ||
+            receiverWalletNumber.equals(_currentWallet.value.walletNumber, ignoreCase = true)
+        ) {
+            return QrPaymentResult.Error("Cannot make QR payment to your own wallet.")
+        }
+
+        val currentWlt = _currentWallet.value
+        val totalDebit = amountCents + feeCents
+        if (currentWlt.availableBalance < totalDebit) {
+            return QrPaymentResult.Error(
+                "Insufficient funds. Available balance is ${Formatters.formatCentsToCurrency(currentWlt.availableBalance)}, but payment total is ${Formatters.formatCentsToCurrency(totalDebit)}."
+            )
+        }
+
+        val newBalance = currentWlt.currentBalance - totalDebit
+        val newAvailable = currentWlt.availableBalance - totalDebit
+
+        val timestamp = System.currentTimeMillis()
+        val randomSuffix = (1000..9999).random()
+        val tx = Transaction(
+            transactionId = "tx_qr_${timestamp}_$randomSuffix",
+            type = TransactionType.QR_PAYMENT,
+            senderId = _currentUser.value.userId,
+            senderName = _currentUser.value.fullName,
+            receiverId = receiverId,
+            receiverName = receiverName,
+            amount = amountCents,
+            fee = feeCents,
+            timestamp = timestamp,
+            description = note.ifBlank { "QR Payment to $receiverName" },
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = "REF-QRP-${timestamp.toString().takeLast(6)}-$randomSuffix"
+        )
+
+        // Single atomic state update
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        return QrPaymentResult.Success(tx, newBalance)
     }
 
     override fun searchReceivers(query: String): List<Beneficiary> {

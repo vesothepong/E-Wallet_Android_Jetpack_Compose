@@ -36,6 +36,7 @@ import com.example.e_wallet.ui.components.RecentTransactionsSection
 import com.example.e_wallet.ui.components.WalletCard
 import com.example.e_wallet.ui.deposit.DepositBottomSheet
 import com.example.e_wallet.ui.receive.ReceiveBottomSheet
+import com.example.e_wallet.ui.scan.ScanQrBottomSheet
 import com.example.e_wallet.ui.withdraw.WithdrawBottomSheet
 import com.example.e_wallet.ui.send.SendMoneyBottomSheet
 import com.example.e_wallet.ui.theme.EWalletTheme
@@ -53,6 +54,7 @@ fun HomeScreen(
     var showWithdrawSheet by remember { mutableStateOf(false) }
     var showSendSheet by remember { mutableStateOf(false) }
     var showReceiveSheet by remember { mutableStateOf(false) }
+    var showScanSheet by remember { mutableStateOf(false) }
     var selectedBeneficiaryForSend by remember { mutableStateOf<Beneficiary?>(null) }
 
     // Show snackbar feedback when triggered
@@ -77,9 +79,10 @@ fun HomeScreen(
                             showDepositSheet = true
                         }
                         BottomNavTab.SCAN -> {
-                            viewModel.onQuickAction(HomeQuickAction.SCAN_QR)
+                            showScanSheet = true
                         }
                         BottomNavTab.HISTORY -> {
+                            currentTab = BottomNavTab.HOME
                             onNavigateToHistory()
                         }
                         BottomNavTab.PROFILE -> {
@@ -102,7 +105,7 @@ fun HomeScreen(
                     HomeQuickAction.RECEIVE -> showReceiveSheet = true
                     HomeQuickAction.DEPOSIT -> showDepositSheet = true
                     HomeQuickAction.WITHDRAW -> showWithdrawSheet = true
-                    else -> viewModel.onQuickAction(action)
+                    HomeQuickAction.SCAN_QR -> showScanSheet = true
                 }
             },
             onFilterSelect = viewModel::setTransactionFilter,
@@ -157,6 +160,18 @@ fun HomeScreen(
         if (showReceiveSheet) {
             ReceiveBottomSheet(
                 onDismiss = { showReceiveSheet = false }
+            )
+        }
+
+        if (showScanSheet) {
+            ScanQrBottomSheet(
+                onDismiss = {
+                    showScanSheet = false
+                    if (currentTab == BottomNavTab.SCAN) {
+                        currentTab = BottomNavTab.HOME
+                    }
+                },
+                repository = viewModel.repository
             )
         }
     }

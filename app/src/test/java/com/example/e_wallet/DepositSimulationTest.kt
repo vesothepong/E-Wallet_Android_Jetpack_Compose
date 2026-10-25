@@ -7,6 +7,9 @@ import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.ui.deposit.DepositStep
 import com.example.e_wallet.ui.deposit.DepositViewModel
 import com.example.e_wallet.ui.home.HomeViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -26,12 +29,13 @@ class DepositSimulationTest {
     private lateinit var repository: InMemoryWalletRepository
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var depositViewModel: DepositViewModel
+    private val testScope = CoroutineScope(Dispatchers.Unconfined + Job())
 
     @Before
     fun setUp() {
         repository = InMemoryWalletRepository()
-        homeViewModel = HomeViewModel(repository)
-        depositViewModel = DepositViewModel(repository)
+        homeViewModel = HomeViewModel(repository, testScope)
+        depositViewModel = DepositViewModel(repository, testScope)
     }
 
     @Test

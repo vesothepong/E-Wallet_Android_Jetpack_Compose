@@ -7,6 +7,9 @@ import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.ui.home.HomeViewModel
 import com.example.e_wallet.ui.withdraw.WithdrawStep
 import com.example.e_wallet.ui.withdraw.WithdrawViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -30,12 +33,13 @@ class WithdrawSimulationTest {
     private lateinit var repository: InMemoryWalletRepository
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var withdrawViewModel: WithdrawViewModel
+    private val testScope = CoroutineScope(Dispatchers.Unconfined + Job())
 
     @Before
     fun setUp() {
         repository = InMemoryWalletRepository()
-        homeViewModel = HomeViewModel(repository)
-        withdrawViewModel = WithdrawViewModel(repository)
+        homeViewModel = HomeViewModel(repository, testScope)
+        withdrawViewModel = WithdrawViewModel(repository, testScope)
     }
 
     @Test
@@ -80,21 +84,22 @@ class WithdrawSimulationTest {
 
     @Test
     fun testWithdrawalWithInsufficientFundsFailsAndLeavesBalanceUnchanged() = runBlocking {
-        val initialBalance = repository.currentWallet.value.currentBalance
-        val initialTxCount = repository.transactions.value.size
+        // First withdraw $1,500.00 so balance drops to $950.00
+        repository.withdraw(amountCents = 150000L)
+        val balanceAfterFirst = repository.currentWallet.value.currentBalance
+        val txCountAfterFirst = repository.transactions.value.size
 
-        // Attempt to withdraw more than available balance ($2,450.00 vs $3,000.00 demo attempt, or just above balance)
-        val overBalanceCents = initialBalance + 5000L // $50 more than available
-        val result = repository.withdraw(amountCents = overBalanceCents)
+        // Attempt to withdraw $1,000.00 (< $2,000.00 limit, but > $950.00 available balance)
+        val result = repository.withdraw(amountCents = 100000L)
 
         assertTrue(result is WithdrawResult.Error)
         val error = result as WithdrawResult.Error
         assertTrue(error.message.contains("Insufficient funds", ignoreCase = true))
 
-        // Balance and transactions must remain strictly unchanged
-        assertEquals(initialBalance, repository.currentWallet.value.currentBalance)
-        assertEquals(initialBalance, repository.currentWallet.value.availableBalance)
-        assertEquals(initialTxCount, repository.transactions.value.size)
+        // Balance and transactions must remain strictly unchanged from balanceAfterFirst
+        assertEquals(balanceAfterFirst, repository.currentWallet.value.currentBalance)
+        assertEquals(balanceAfterFirst, repository.currentWallet.value.availableBalance)
+        assertEquals(txCountAfterFirst, repository.transactions.value.size)
     }
 
     @Test

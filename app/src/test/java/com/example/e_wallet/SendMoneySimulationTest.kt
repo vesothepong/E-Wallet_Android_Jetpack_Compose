@@ -8,6 +8,9 @@ import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.ui.home.HomeViewModel
 import com.example.e_wallet.ui.send.SendMoneyStep
 import com.example.e_wallet.ui.send.SendMoneyViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,12 +35,13 @@ class SendMoneySimulationTest {
     private lateinit var repository: InMemoryWalletRepository
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var sendMoneyViewModel: SendMoneyViewModel
+    private val testScope = CoroutineScope(Dispatchers.Unconfined + Job())
 
     @Before
     fun setUp() {
         repository = InMemoryWalletRepository()
-        homeViewModel = HomeViewModel(repository)
-        sendMoneyViewModel = SendMoneyViewModel(repository)
+        homeViewModel = HomeViewModel(repository, testScope)
+        sendMoneyViewModel = SendMoneyViewModel(repository, testScope)
     }
 
     @Test
@@ -93,7 +97,7 @@ class SendMoneySimulationTest {
         val initialBalance = repository.currentWallet.value.currentBalance
         val initialTxCount = repository.transactions.value.size
 
-        val overBalanceCents = initialBalance + 10000L // $100.00 more than available
+        val overBalanceCents = 246000L // $2,460.00 (> $2,450.00 balance, < $2,500.00 limit)
         val result = repository.sendMoney(
             receiverWalletNumber = "PKP-1049-5521",
             receiverName = "Sarah Chen",
@@ -201,7 +205,11 @@ class SendMoneySimulationTest {
     @Test
     fun testSendMoneyViewModelStepFlowAndPinVerification() = runBlocking {
         val beneficiary = repository.beneficiaries.value.first()
-        val viewModel = SendMoneyViewModel(repository = repository, initialBeneficiary = beneficiary)
+        val viewModel = SendMoneyViewModel(
+            repository = repository,
+            coroutineScope = testScope,
+            initialBeneficiary = beneficiary
+        )
 
         // When initialized with a beneficiary, starts directly at INPUT_AMOUNT
         assertEquals(SendMoneyStep.INPUT_AMOUNT, viewModel.uiState.value.step)

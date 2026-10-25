@@ -64,4 +64,18 @@ object Formatters {
         val last4 = walletNumber.takeLast(4)
         return "•••• •••• $last4"
     }
+
+    fun formatCentsToAmountOnly(cents: Long): String {
+        val dollars = cents / 100.0
+        return if (cents % 100 == 0L) {
+            (cents / 100).toString()
+        } else {
+            String.format(Locale.US, "%.2f", dollars)
+        }
+    }
+
+    fun formatTimestampToFullDate(timestamp: Long): String {
+        val sdf = SimpleDateFormat("MMM dd, yyyy • h:mm a", Locale.getDefault())
+        return sdf.format(Date(timestamp))
+    }
 }

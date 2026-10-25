@@ -4,6 +4,9 @@ import com.example.e_wallet.data.InMemoryWalletRepository
 import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.ui.home.HomeViewModel
 import com.example.e_wallet.ui.home.TransactionFilter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,11 +23,12 @@ class DashboardBusinessLogicTest {
 
     private lateinit var repository: InMemoryWalletRepository
     private lateinit var viewModel: HomeViewModel
+    private val testScope = CoroutineScope(Dispatchers.Unconfined + Job())
 
     @Before
     fun setUp() {
         repository = InMemoryWalletRepository()
-        viewModel = HomeViewModel(repository)
+        viewModel = HomeViewModel(repository, testScope)
     }
 
     @Test

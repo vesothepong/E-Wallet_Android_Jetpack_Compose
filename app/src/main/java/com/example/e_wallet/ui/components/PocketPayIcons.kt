@@ -686,4 +686,98 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val FlashOn: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "FlashOn",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(7f, 2f)
+                verticalLineTo(13f)
+                horizontalLineTo(10f)
+                verticalLineTo(22f)
+                lineTo(17f, 10f)
+                horizontalLineTo(13f)
+                lineTo(17f, 2f)
+                horizontalLineTo(7f)
+                close()
+            }
+        }.build()
+    }
+
+    val FlashOff: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "FlashOff",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(3.27f, 3f)
+                lineTo(2f, 4.27f)
+                lineTo(7.73f, 10f)
+                horizontalLineTo(7f)
+                verticalLineTo(13f)
+                horizontalLineTo(10f)
+                verticalLineTo(18.27f)
+                lineTo(13.73f, 16f)
+                lineTo(19.73f, 22f)
+                lineTo(21f, 20.73f)
+                lineTo(3.27f, 3f)
+                close()
+                moveTo(17f, 10f)
+                lineTo(14.09f, 4.54f)
+                lineTo(17f, 2f)
+                horizontalLineTo(7f)
+                verticalLineTo(3.18f)
+                lineTo(13.82f, 10f)
+                horizontalLineTo(17f)
+                close()
+            }
+        }.build()
+    }
+
+    val FlipCamera: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "FlipCamera",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(20f, 4f)
+                horizontalLineTo(16.83f)
+                lineTo(15f, 2f)
+                horizontalLineTo(9f)
+                lineTo(7.17f, 4f)
+                horizontalLineTo(4f)
+                curveTo(2.9f, 4f, 2f, 4.9f, 2f, 6f)
+                verticalLineTo(18f)
+                curveTo(2f, 19.1f, 2.9f, 20f, 4f, 20f)
+                horizontalLineTo(20f)
+                curveTo(21.1f, 20f, 22f, 19.1f, 22f, 18f)
+                verticalLineTo(6f)
+                curveTo(22f, 4.9f, 21.1f, 4f, 20f, 4f)
+                close()
+                moveTo(12f, 17f)
+                curveTo(9.24f, 17f, 7f, 14.76f, 7f, 12f)
+                curveTo(7f, 9.24f, 9.24f, 7f, 12f, 7f)
+                curveTo(14.76f, 7f, 17f, 9.24f, 17f, 12f)
+                curveTo(17f, 14.76f, 14.76f, 17f, 12f, 17f)
+                close()
+                moveTo(12f, 9f)
+                curveTo(10.34f, 9f, 9f, 10.34f, 9f, 12f)
+                curveTo(9f, 13.66f, 10.34f, 15f, 12f, 15f)
+                curveTo(13.66f, 15f, 15f, 13.66f, 15f, 12f)
+                curveTo(15f, 10.34f, 13.66f, 9f, 12f, 9f)
+                close()
+            }
+        }.build()
+    }
 }

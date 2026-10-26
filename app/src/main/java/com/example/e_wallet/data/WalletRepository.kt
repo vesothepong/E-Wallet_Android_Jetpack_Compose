@@ -1,7 +1,11 @@
 package com.example.e_wallet.data
 
 import com.example.e_wallet.model.AccountStatus
+import com.example.e_wallet.model.BankAccount
 import com.example.e_wallet.model.Beneficiary
+import com.example.e_wallet.model.CardNetwork
+import com.example.e_wallet.model.CardType
+import com.example.e_wallet.model.PaymentCard
 import com.example.e_wallet.model.Transaction
 import com.example.e_wallet.model.TransactionStatus
 import com.example.e_wallet.model.TransactionType
@@ -49,6 +53,8 @@ interface WalletRepository {
     val isBiometricsEnabled: StateFlow<Boolean>
     val isNotificationsEnabled: StateFlow<Boolean>
     val isCardFrozen: StateFlow<Boolean>
+    val cards: StateFlow<List<PaymentCard>>
+    val bankAccounts: StateFlow<List<BankAccount>>
 
     suspend fun deposit(
         amountCents: Long,
@@ -89,6 +95,14 @@ interface WalletRepository {
     fun setBiometricsEnabled(enabled: Boolean)
     fun setNotificationsEnabled(enabled: Boolean)
     fun setCardFrozen(frozen: Boolean)
+
+    fun setCardFrozen(cardId: String, frozen: Boolean)
+    fun toggleOnlinePayments(cardId: String, enabled: Boolean)
+    fun toggleInternationalPayments(cardId: String, enabled: Boolean)
+    fun updateMonthlyLimit(cardId: String, limitCents: Long)
+    fun addCard(card: PaymentCard)
+    fun addBankAccount(account: BankAccount)
+    fun setDefaultCard(cardId: String)
 
     fun resetDemoData()
 }
@@ -263,6 +277,66 @@ class InMemoryWalletRepository : WalletRepository {
         )
     }
 
+    private val defaultCards = listOf(
+        PaymentCard(
+            cardId = "crd_001",
+            cardholderName = "Alex Morgan",
+            cardNumberMasked = "•••• •••• •••• 9924",
+            fullCardNumber = "4812 9012 3456 9924",
+            expiryDate = "08/29",
+            cvv = "742",
+            cardType = CardType.VIRTUAL_DEBIT,
+            cardNetwork = CardNetwork.VISA,
+            isFrozen = false,
+            isPrimary = true,
+            isOnlinePaymentEnabled = true,
+            isInternationalEnabled = false,
+            monthlyLimitCents = 300000L, // $3,000.00
+            monthlySpentCents = 85000L,  // $850.00
+            gradientStartColorHex = 0xFF4338CA,
+            gradientEndColorHex = 0xFF7E22CE
+        ),
+        PaymentCard(
+            cardId = "crd_002",
+            cardholderName = "Alex Morgan",
+            cardNumberMasked = "•••• •••• •••• 1042",
+            fullCardNumber = "5421 8820 9102 1042",
+            expiryDate = "11/28",
+            cvv = "389",
+            cardType = CardType.PHYSICAL_DEBIT,
+            cardNetwork = CardNetwork.MASTERCARD,
+            isFrozen = false,
+            isPrimary = false,
+            isOnlinePaymentEnabled = true,
+            isInternationalEnabled = true,
+            monthlyLimitCents = 500000L, // $5,000.00
+            monthlySpentCents = 125000L, // $1,250.00
+            gradientStartColorHex = 0xFF0F172A,
+            gradientEndColorHex = 0xFF334155
+        )
+    )
+
+    private val defaultBankAccounts = listOf(
+        BankAccount(
+            accountId = "bnk_001",
+            bankName = "Chase Premier Checking",
+            accountType = "Checking",
+            accountNumberMasked = "•••• 4812",
+            routingNumberMasked = "•••• 0210",
+            isPrimary = true,
+            balanceCents = 1425000L
+        ),
+        BankAccount(
+            accountId = "bnk_002",
+            bankName = "Bank of America Advantage Savings",
+            accountType = "Savings",
+            accountNumberMasked = "•••• 9021",
+            routingNumberMasked = "•••• 0440",
+            isPrimary = false,
+            balanceCents = 2890000L
+        )
+    )
+
     private val _currentUser = MutableStateFlow(defaultUser)
     override val currentUser: StateFlow<User> = _currentUser.asStateFlow()
 
@@ -274,6 +348,12 @@ class InMemoryWalletRepository : WalletRepository {
 
     private val _beneficiaries = MutableStateFlow(defaultBeneficiaries)
     override val beneficiaries: StateFlow<List<Beneficiary>> = _beneficiaries.asStateFlow()
+
+    private val _cards = MutableStateFlow(defaultCards)
+    override val cards: StateFlow<List<PaymentCard>> = _cards.asStateFlow()
+
+    private val _bankAccounts = MutableStateFlow(defaultBankAccounts)
+    override val bankAccounts: StateFlow<List<BankAccount>> = _bankAccounts.asStateFlow()
 
     private val _unreadNotificationsCount = MutableStateFlow(3)
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
@@ -562,6 +642,54 @@ class InMemoryWalletRepository : WalletRepository {
 
     override fun setCardFrozen(frozen: Boolean) {
         _isCardFrozen.value = frozen
+        _cards.value = _cards.value.map { card ->
+            if (card.isPrimary) card.copy(isFrozen = frozen) else card
+        }
+    }
+
+    override fun setCardFrozen(cardId: String, frozen: Boolean) {
+        _cards.value = _cards.value.map { card ->
+            if (card.cardId == cardId) {
+                if (card.isPrimary) _isCardFrozen.value = frozen
+                card.copy(isFrozen = frozen)
+            } else card
+        }
+    }
+
+    override fun toggleOnlinePayments(cardId: String, enabled: Boolean) {
+        _cards.value = _cards.value.map { card ->
+            if (card.cardId == cardId) card.copy(isOnlinePaymentEnabled = enabled) else card
+        }
+    }
+
+    override fun toggleInternationalPayments(cardId: String, enabled: Boolean) {
+        _cards.value = _cards.value.map { card ->
+            if (card.cardId == cardId) card.copy(isInternationalEnabled = enabled) else card
+        }
+    }
+
+    override fun updateMonthlyLimit(cardId: String, limitCents: Long) {
+        _cards.value = _cards.value.map { card ->
+            if (card.cardId == cardId) card.copy(monthlyLimitCents = limitCents) else card
+        }
+    }
+
+    override fun addCard(card: PaymentCard) {
+        _cards.value = _cards.value + card
+    }
+
+    override fun addBankAccount(account: BankAccount) {
+        _bankAccounts.value = _bankAccounts.value + account
+    }
+
+    override fun setDefaultCard(cardId: String) {
+        _cards.value = _cards.value.map { card ->
+            val isTarget = card.cardId == cardId
+            if (isTarget) {
+                _isCardFrozen.value = card.isFrozen
+            }
+            card.copy(isPrimary = isTarget)
+        }
     }
 
     override fun resetDemoData() {
@@ -569,6 +697,8 @@ class InMemoryWalletRepository : WalletRepository {
         _currentWallet.value = defaultWallet
         _transactions.value = generateDefaultTransactions()
         _beneficiaries.value = defaultBeneficiaries
+        _cards.value = defaultCards
+        _bankAccounts.value = defaultBankAccounts
         _unreadNotificationsCount.value = 3
         _currentPin.value = defaultPin
         _isBiometricsEnabled.value = true

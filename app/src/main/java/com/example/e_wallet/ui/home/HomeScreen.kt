@@ -1,6 +1,7 @@
 package com.example.e_wallet.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +47,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = remember { HomeViewModel() },
     onNavigateToHistory: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToWallet: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -77,7 +79,8 @@ fun HomeScreen(
                     when (selected) {
                         BottomNavTab.HOME -> { /* already on home */ }
                         BottomNavTab.WALLET -> {
-                            showDepositSheet = true
+                            currentTab = BottomNavTab.HOME
+                            onNavigateToWallet()
                         }
                         BottomNavTab.SCAN -> {
                             showScanSheet = true
@@ -123,6 +126,7 @@ fun HomeScreen(
             onNotificationClick = viewModel::onNotificationClicked,
             onResetDemoClick = viewModel::resetDemoData,
             onProfileClick = onNavigateToProfile,
+            onWalletClick = onNavigateToWallet,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = onNavigateToHistory,
             modifier = Modifier.padding(innerPadding)
@@ -191,6 +195,7 @@ fun HomeScreenContent(
     onNotificationClick: () -> Unit,
     onResetDemoClick: () -> Unit,
     onProfileClick: () -> Unit = {},
+    onWalletClick: () -> Unit = {},
     onTransactionClick: (Transaction) -> Unit,
     onSeeAllClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -223,7 +228,8 @@ fun HomeScreenContent(
             isBalanceVisible = uiState.isBalanceVisible,
             totalReceivedCents = uiState.totalReceivedCents,
             totalSentCents = uiState.totalSentCents,
-            onToggleBalanceVisibility = onToggleBalance
+            onToggleBalanceVisibility = onToggleBalance,
+            modifier = Modifier.clickable(onClick = onWalletClick)
         )
 
         // 4. Quick Actions: Send, Receive, Deposit, Withdraw

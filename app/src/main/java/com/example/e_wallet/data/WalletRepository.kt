@@ -5,6 +5,8 @@ import com.example.e_wallet.model.BankAccount
 import com.example.e_wallet.model.Beneficiary
 import com.example.e_wallet.model.CardNetwork
 import com.example.e_wallet.model.CardType
+import com.example.e_wallet.model.NotificationItem
+import com.example.e_wallet.model.NotificationType
 import com.example.e_wallet.model.PaymentCard
 import com.example.e_wallet.model.Transaction
 import com.example.e_wallet.model.TransactionStatus
@@ -55,6 +57,7 @@ interface WalletRepository {
     val isCardFrozen: StateFlow<Boolean>
     val cards: StateFlow<List<PaymentCard>>
     val bankAccounts: StateFlow<List<BankAccount>>
+    val notifications: StateFlow<List<NotificationItem>>
 
     suspend fun deposit(
         amountCents: Long,
@@ -103,6 +106,18 @@ interface WalletRepository {
     fun addCard(card: PaymentCard)
     fun addBankAccount(account: BankAccount)
     fun setDefaultCard(cardId: String)
+
+    fun markNotificationAsRead(id: String)
+    fun markAllNotificationsAsRead()
+    fun deleteNotification(id: String)
+    fun clearAllNotifications()
+    fun addNotification(
+        title: String,
+        message: String,
+        type: NotificationType,
+        amountCents: Long? = null,
+        transactionId: String? = null
+    )
 
     fun resetDemoData()
 }
@@ -337,6 +352,60 @@ class InMemoryWalletRepository : WalletRepository {
         )
     )
 
+    private fun generateDefaultNotifications(): List<NotificationItem> {
+        val now = System.currentTimeMillis()
+        val hour = 3600 * 1000L
+        val day = 24 * hour
+
+        return listOf(
+            NotificationItem(
+                id = "notif_001",
+                title = "Payment Received",
+                message = "You received $80.00 from John Doe for dinner split.",
+                timestamp = now - 45 * 60 * 1000L,
+                type = NotificationType.TRANSACTION,
+                isRead = false,
+                amountCents = 8000L,
+                transactionId = "tx_1007"
+            ),
+            NotificationItem(
+                id = "notif_002",
+                title = "Security Alert: New Device Login",
+                message = "Your PocketPay account was accessed from Pixel 10 Pro (Android 16). If this wasn't you, review your security settings.",
+                timestamp = now - 3 * hour,
+                type = NotificationType.SECURITY,
+                isRead = false
+            ),
+            NotificationItem(
+                id = "notif_003",
+                title = "Top-Up Successful",
+                message = "Your wallet was credited with $500.00 from Chase Checking •••• 4812.",
+                timestamp = now - 1 * day,
+                type = NotificationType.TRANSACTION,
+                isRead = false,
+                amountCents = 50000L,
+                transactionId = "tx_1002"
+            ),
+            NotificationItem(
+                id = "notif_004",
+                title = "2% Cashback Credited",
+                message = "You earned $0.17 cash rewards on your Starbucks coffee purchase.",
+                timestamp = now - 2 * day,
+                type = NotificationType.PROMOTION,
+                isRead = true,
+                amountCents = 17L
+            ),
+            NotificationItem(
+                id = "notif_005",
+                title = "Welcome to PocketPay v2.4",
+                message = "Explore QR Scan & Pay, Multi-card management, and instant transfers.",
+                timestamp = now - 5 * day,
+                type = NotificationType.SYSTEM,
+                isRead = true
+            )
+        )
+    }
+
     private val _currentUser = MutableStateFlow(defaultUser)
     override val currentUser: StateFlow<User> = _currentUser.asStateFlow()
 
@@ -354,6 +423,9 @@ class InMemoryWalletRepository : WalletRepository {
 
     private val _bankAccounts = MutableStateFlow(defaultBankAccounts)
     override val bankAccounts: StateFlow<List<BankAccount>> = _bankAccounts.asStateFlow()
+
+    private val _notifications = MutableStateFlow(generateDefaultNotifications())
+    override val notifications: StateFlow<List<NotificationItem>> = _notifications.asStateFlow()
 
     private val _unreadNotificationsCount = MutableStateFlow(3)
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
@@ -417,6 +489,14 @@ class InMemoryWalletRepository : WalletRepository {
         )
         _transactions.value = listOf(tx) + _transactions.value
 
+        addNotification(
+            title = "Deposit Successful",
+            message = "Deposited ${Formatters.formatCentsToCurrency(amountCents)} into your PocketPay wallet.",
+            type = NotificationType.TRANSACTION,
+            amountCents = amountCents,
+            transactionId = tx.transactionId
+        )
+
         return DepositResult.Success(tx, newBalance)
     }
 
@@ -468,6 +548,14 @@ class InMemoryWalletRepository : WalletRepository {
             availableBalance = newAvailable
         )
         _transactions.value = listOf(tx) + _transactions.value
+
+        addNotification(
+            title = "Cashout Completed",
+            message = "Withdrew ${Formatters.formatCentsToCurrency(amountCents)} from your PocketPay wallet.",
+            type = NotificationType.TRANSACTION,
+            amountCents = amountCents,
+            transactionId = tx.transactionId
+        )
 
         return WithdrawResult.Success(tx, newBalance)
     }
@@ -530,6 +618,14 @@ class InMemoryWalletRepository : WalletRepository {
         )
         _transactions.value = listOf(tx) + _transactions.value
 
+        addNotification(
+            title = "Money Sent",
+            message = "Sent ${Formatters.formatCentsToCurrency(amountCents)} to $receiverName.",
+            type = NotificationType.TRANSACTION,
+            amountCents = amountCents,
+            transactionId = tx.transactionId
+        )
+
         return SendResult.Success(tx, newBalance)
     }
 
@@ -591,6 +687,14 @@ class InMemoryWalletRepository : WalletRepository {
         )
         _transactions.value = listOf(tx) + _transactions.value
 
+        addNotification(
+            title = "QR Payment Completed",
+            message = "Paid ${Formatters.formatCentsToCurrency(amountCents)} to $receiverName via QR.",
+            type = NotificationType.TRANSACTION,
+            amountCents = amountCents,
+            transactionId = tx.transactionId
+        )
+
         return QrPaymentResult.Success(tx, newBalance)
     }
 
@@ -619,6 +723,11 @@ class InMemoryWalletRepository : WalletRepository {
             return PinChangeResult.Error("New PIN cannot be identical to the current PIN.")
         }
         _currentPin.value = newPin
+        addNotification(
+            title = "Security PIN Changed",
+            message = "Your 4-digit security PIN was successfully updated.",
+            type = NotificationType.SECURITY
+        )
         return PinChangeResult.Success
     }
 
@@ -692,6 +801,53 @@ class InMemoryWalletRepository : WalletRepository {
         }
     }
 
+    private fun syncUnreadNotificationsCount() {
+        _unreadNotificationsCount.value = _notifications.value.count { !it.isRead }
+    }
+
+    override fun markNotificationAsRead(id: String) {
+        _notifications.value = _notifications.value.map {
+            if (it.id == id) it.copy(isRead = true) else it
+        }
+        syncUnreadNotificationsCount()
+    }
+
+    override fun markAllNotificationsAsRead() {
+        _notifications.value = _notifications.value.map { it.copy(isRead = true) }
+        syncUnreadNotificationsCount()
+    }
+
+    override fun deleteNotification(id: String) {
+        _notifications.value = _notifications.value.filter { it.id != id }
+        syncUnreadNotificationsCount()
+    }
+
+    override fun clearAllNotifications() {
+        _notifications.value = emptyList()
+        syncUnreadNotificationsCount()
+    }
+
+    override fun addNotification(
+        title: String,
+        message: String,
+        type: NotificationType,
+        amountCents: Long?,
+        transactionId: String?
+    ) {
+        val newNotif = NotificationItem(
+            id = "notif_${System.currentTimeMillis()}_${(100..999).random()}",
+            title = title,
+            message = message,
+            timestamp = System.currentTimeMillis(),
+            type = type,
+            isRead = false,
+            amountCents = amountCents,
+            transactionId = transactionId
+        )
+        _notifications.value = listOf(newNotif) + _notifications.value
+        syncUnreadNotificationsCount()
+    }
+
     override fun resetDemoData() {
         _currentUser.value = defaultUser
         _currentWallet.value = defaultWallet
@@ -699,6 +855,7 @@ class InMemoryWalletRepository : WalletRepository {
         _beneficiaries.value = defaultBeneficiaries
         _cards.value = defaultCards
         _bankAccounts.value = defaultBankAccounts
+        _notifications.value = generateDefaultNotifications()
         _unreadNotificationsCount.value = 3
         _currentPin.value = defaultPin
         _isBiometricsEnabled.value = true

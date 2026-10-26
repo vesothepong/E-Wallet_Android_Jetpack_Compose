@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.e_wallet.ui.history.TransactionHistoryScreen
 import com.example.e_wallet.ui.home.HomeScreen
+import com.example.e_wallet.ui.notifications.NotificationsScreen
 import com.example.e_wallet.ui.profile.ProfileScreen
 import com.example.e_wallet.ui.wallet.WalletScreen
 
@@ -16,6 +17,7 @@ object AppDestinations {
     const val TRANSACTION_HISTORY = "transaction_history"
     const val PROFILE = "profile"
     const val WALLET = "wallet"
+    const val NOTIFICATIONS = "notifications"
 }
 
 @Composable
@@ -36,6 +38,9 @@ fun AppNavGraph(
                 },
                 onNavigateToWallet = {
                     navController.navigate(AppDestinations.WALLET)
+                },
+                onNavigateToNotifications = {
+                    navController.navigate(AppDestinations.NOTIFICATIONS)
                 }
             )
         }
@@ -54,6 +59,12 @@ fun AppNavGraph(
 
         composable(AppDestinations.WALLET) {
             WalletScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppDestinations.NOTIFICATIONS) {
+            NotificationsScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

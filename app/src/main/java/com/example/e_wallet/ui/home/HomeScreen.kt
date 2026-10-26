@@ -48,6 +48,7 @@ fun HomeScreen(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -123,7 +124,7 @@ fun HomeScreen(
                 selectedBeneficiaryForSend = null
                 showSendSheet = true
             },
-            onNotificationClick = viewModel::onNotificationClicked,
+            onNotificationClick = onNavigateToNotifications,
             onResetDemoClick = viewModel::resetDemoData,
             onProfileClick = onNavigateToProfile,
             onWalletClick = onNavigateToWallet,

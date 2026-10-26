@@ -245,7 +245,8 @@ class ScanQrViewModel(
 
     private fun verifyPinAndExecute(pin: String) {
         val current = _uiState.value
-        if (pin == current.demoPin) {
+        val actualPin = repository.currentPin.value
+        if (pin == actualPin) {
             executePayment()
         } else {
             val remaining = current.pinAttemptsLeft - 1
@@ -254,7 +255,7 @@ class ScanQrViewModel(
                     it.copy(
                         pinInput = "",
                         pinAttemptsLeft = remaining,
-                        pinError = "Incorrect PIN. $remaining attempt(s) remaining (Demo PIN: 1234)"
+                        pinError = "Incorrect PIN. $remaining attempt(s) remaining (Demo PIN: $actualPin)"
                     )
                 }
             } else {

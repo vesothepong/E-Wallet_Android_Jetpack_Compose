@@ -45,6 +45,7 @@ import com.example.e_wallet.ui.theme.EWalletTheme
 fun HomeScreen(
     viewModel: HomeViewModel = remember { HomeViewModel() },
     onNavigateToHistory: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -86,7 +87,8 @@ fun HomeScreen(
                             onNavigateToHistory()
                         }
                         BottomNavTab.PROFILE -> {
-                            viewModel.onProfileClicked()
+                            currentTab = BottomNavTab.HOME
+                            onNavigateToProfile()
                         }
                     }
                 }
@@ -120,6 +122,7 @@ fun HomeScreen(
             },
             onNotificationClick = viewModel::onNotificationClicked,
             onResetDemoClick = viewModel::resetDemoData,
+            onProfileClick = onNavigateToProfile,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = onNavigateToHistory,
             modifier = Modifier.padding(innerPadding)
@@ -187,6 +190,7 @@ fun HomeScreenContent(
     onAddBeneficiaryClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onResetDemoClick: () -> Unit,
+    onProfileClick: () -> Unit = {},
     onTransactionClick: (Transaction) -> Unit,
     onSeeAllClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -206,7 +210,8 @@ fun HomeScreenContent(
             user = uiState.currentUser,
             unreadNotificationsCount = uiState.unreadNotificationsCount,
             onNotificationClick = onNotificationClick,
-            onResetDemoClick = onResetDemoClick
+            onResetDemoClick = onResetDemoClick,
+            onProfileClick = onProfileClick
         )
 
         // 2. Educational Demo Simulator Banner

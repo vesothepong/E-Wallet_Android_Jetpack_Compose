@@ -345,7 +345,8 @@ class SendMoneyViewModel(
 
     private fun validatePinAndSubmit(pin: String) {
         val state = _uiState.value
-        if (pin != state.demoPin) {
+        val actualPin = repository.currentPin.value
+        if (pin != actualPin) {
             val remaining = state.pinAttemptsLeft - 1
             if (remaining <= 0) {
                 _uiState.update {
@@ -361,7 +362,7 @@ class SendMoneyViewModel(
                     it.copy(
                         pinInput = "",
                         pinAttemptsLeft = remaining,
-                        pinError = "Incorrect demo PIN. $remaining attempt${if (remaining == 1) "" else "s"} remaining (Demo PIN: 1234)"
+                        pinError = "Incorrect demo PIN. $remaining attempt${if (remaining == 1) "" else "s"} remaining (Demo PIN: $actualPin)"
                     )
                 }
             }

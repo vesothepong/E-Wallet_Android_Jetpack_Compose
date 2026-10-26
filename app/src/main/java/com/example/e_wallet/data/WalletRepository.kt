@@ -34,12 +34,21 @@ sealed class QrPaymentResult {
     data class Error(val message: String) : QrPaymentResult()
 }
 
+sealed class PinChangeResult {
+    data object Success : PinChangeResult()
+    data class Error(val message: String) : PinChangeResult()
+}
+
 interface WalletRepository {
     val currentUser: StateFlow<User>
     val currentWallet: StateFlow<Wallet>
     val transactions: StateFlow<List<Transaction>>
     val beneficiaries: StateFlow<List<Beneficiary>>
     val unreadNotificationsCount: StateFlow<Int>
+    val currentPin: StateFlow<String>
+    val isBiometricsEnabled: StateFlow<Boolean>
+    val isNotificationsEnabled: StateFlow<Boolean>
+    val isCardFrozen: StateFlow<Boolean>
 
     suspend fun deposit(
         amountCents: Long,
@@ -73,6 +82,13 @@ interface WalletRepository {
     ): QrPaymentResult
 
     fun searchReceivers(query: String): List<Beneficiary>
+
+    fun verifyPin(pin: String): Boolean
+    fun changePin(oldPin: String, newPin: String): PinChangeResult
+    fun updateProfile(fullName: String, email: String, phoneNumber: String): Boolean
+    fun setBiometricsEnabled(enabled: Boolean)
+    fun setNotificationsEnabled(enabled: Boolean)
+    fun setCardFrozen(frozen: Boolean)
 
     fun resetDemoData()
 }
@@ -261,6 +277,19 @@ class InMemoryWalletRepository : WalletRepository {
 
     private val _unreadNotificationsCount = MutableStateFlow(3)
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
+
+    private val defaultPin = "1234"
+    private val _currentPin = MutableStateFlow(defaultPin)
+    override val currentPin: StateFlow<String> = _currentPin.asStateFlow()
+
+    private val _isBiometricsEnabled = MutableStateFlow(true)
+    override val isBiometricsEnabled: StateFlow<Boolean> = _isBiometricsEnabled.asStateFlow()
+
+    private val _isNotificationsEnabled = MutableStateFlow(true)
+    override val isNotificationsEnabled: StateFlow<Boolean> = _isNotificationsEnabled.asStateFlow()
+
+    private val _isCardFrozen = MutableStateFlow(false)
+    override val isCardFrozen: StateFlow<Boolean> = _isCardFrozen.asStateFlow()
 
     private val depositMutex = Mutex()
     private val withdrawMutex = Mutex()
@@ -495,12 +524,56 @@ class InMemoryWalletRepository : WalletRepository {
         }
     }
 
+    override fun verifyPin(pin: String): Boolean {
+        return pin == _currentPin.value
+    }
+
+    override fun changePin(oldPin: String, newPin: String): PinChangeResult {
+        if (oldPin != _currentPin.value) {
+            return PinChangeResult.Error("Incorrect current PIN.")
+        }
+        if (newPin.length != 4 || !newPin.all { it.isDigit() }) {
+            return PinChangeResult.Error("New PIN must be exactly 4 digits.")
+        }
+        if (newPin == oldPin) {
+            return PinChangeResult.Error("New PIN cannot be identical to the current PIN.")
+        }
+        _currentPin.value = newPin
+        return PinChangeResult.Success
+    }
+
+    override fun updateProfile(fullName: String, email: String, phoneNumber: String): Boolean {
+        if (fullName.isBlank()) return false
+        _currentUser.value = _currentUser.value.copy(
+            fullName = fullName.trim(),
+            email = email.trim(),
+            phoneNumber = phoneNumber.trim()
+        )
+        return true
+    }
+
+    override fun setBiometricsEnabled(enabled: Boolean) {
+        _isBiometricsEnabled.value = enabled
+    }
+
+    override fun setNotificationsEnabled(enabled: Boolean) {
+        _isNotificationsEnabled.value = enabled
+    }
+
+    override fun setCardFrozen(frozen: Boolean) {
+        _isCardFrozen.value = frozen
+    }
+
     override fun resetDemoData() {
         _currentUser.value = defaultUser
         _currentWallet.value = defaultWallet
         _transactions.value = generateDefaultTransactions()
         _beneficiaries.value = defaultBeneficiaries
         _unreadNotificationsCount.value = 3
+        _currentPin.value = defaultPin
+        _isBiometricsEnabled.value = true
+        _isNotificationsEnabled.value = true
+        _isCardFrozen.value = false
     }
 }
 

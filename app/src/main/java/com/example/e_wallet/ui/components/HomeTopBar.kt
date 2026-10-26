@@ -1,6 +1,7 @@
 package com.example.e_wallet.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ fun HomeTopBar(
     unreadNotificationsCount: Int,
     onNotificationClick: () -> Unit,
     onResetDemoClick: () -> Unit,
+    onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -53,7 +55,9 @@ fun HomeTopBar(
             Surface(
                 shape = CircleShape,
                 color = PrimaryBlue,
-                modifier = Modifier.size(46.dp)
+                modifier = Modifier
+                    .size(46.dp)
+                    .clickable(onClick = onProfileClick)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     val initials = user?.fullName

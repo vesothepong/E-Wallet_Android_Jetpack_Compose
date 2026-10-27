@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.e_wallet.data.WalletRepository
@@ -302,7 +303,7 @@ private fun ScannerView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.5.dp)
-                    .offset(y = laserY.dp - 120.dp)
+                    .offset { IntOffset(x = 0, y = (laserY.dp - 120.dp).roundToPx()) }
                     .background(
                         Brush.horizontalGradient(
                             listOf(

@@ -38,8 +38,8 @@ fun HomeTopBar(
     unreadNotificationsCount: Int,
     onNotificationClick: () -> Unit,
     onResetDemoClick: () -> Unit,
-    onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onProfileClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier

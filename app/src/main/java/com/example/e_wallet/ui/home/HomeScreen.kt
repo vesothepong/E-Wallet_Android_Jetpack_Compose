@@ -47,13 +47,13 @@ import com.example.e_wallet.ui.theme.EWalletTheme
 
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     viewModel: HomeViewModel = remember { HomeViewModel() },
     onNavigateToHistory: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToBills: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onNavigateToBills: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -211,18 +211,18 @@ fun HomeScreenContent(
     uiState: HomeUiState,
     onToggleBalance: () -> Unit,
     onQuickAction: (HomeQuickAction) -> Unit,
-    onCategoryClick: (BillCategory?) -> Unit = {},
-    onServicesSeeAllClick: () -> Unit = {},
     onFilterSelect: (TransactionFilter) -> Unit,
     onBeneficiaryClick: (Beneficiary) -> Unit,
     onAddBeneficiaryClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onResetDemoClick: () -> Unit,
-    onProfileClick: () -> Unit = {},
-    onWalletClick: () -> Unit = {},
     onTransactionClick: (Transaction) -> Unit,
     onSeeAllClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCategoryClick: (BillCategory?) -> Unit = {},
+    onServicesSeeAllClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onWalletClick: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 

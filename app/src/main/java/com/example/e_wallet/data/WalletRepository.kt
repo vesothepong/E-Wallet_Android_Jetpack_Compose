@@ -134,6 +134,9 @@ interface WalletRepository {
     )
 
     fun resetDemoData()
+
+    /** Persist an updated [User] (e.g. after profile edits). */
+    fun updateUser(user: User)
 }
 
 /**
@@ -1045,7 +1048,12 @@ class InMemoryWalletRepository : WalletRepository {
         _isNotificationsEnabled.value = true
         _isCardFrozen.value = false
     }
+
+    override fun updateUser(user: User) {
+        _currentUser.value = user
+    }
 }
+
 
 /**
  * Shared provider ensuring ViewModels observe the same in-memory repository instance.

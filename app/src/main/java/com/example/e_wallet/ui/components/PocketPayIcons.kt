@@ -1255,4 +1255,109 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val Email: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Email",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(20f, 4f)
+                lineTo(4f, 4f)
+                curveTo(2.9f, 4f, 2.01f, 4.9f, 2.01f, 6f)
+                lineTo(2f, 18f)
+                curveTo(2f, 19.1f, 2.9f, 20f, 4f, 20f)
+                lineTo(20f, 20f)
+                curveTo(21.1f, 20f, 22f, 19.1f, 22f, 18f)
+                lineTo(22f, 6f)
+                curveTo(22f, 4.9f, 21.1f, 4f, 20f, 4f)
+                close()
+                moveTo(20f, 8f)
+                lineTo(12f, 13f)
+                lineTo(4f, 8f)
+                lineTo(4f, 6f)
+                lineTo(12f, 11f)
+                lineTo(20f, 6f)
+                lineTo(20f, 8f)
+                close()
+            }
+        }.build()
+    }
+
+    val Phone: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Phone",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(6.62f, 10.79f)
+                curveTo(8.06f, 13.62f, 10.38f, 15.93f, 13.21f, 17.38f)
+                lineTo(15.41f, 15.18f)
+                curveTo(15.68f, 14.91f, 16.08f, 14.82f, 16.43f, 14.94f)
+                curveTo(17.55f, 15.3f, 18.75f, 15.5f, 20f, 15.5f)
+                curveTo(20.55f, 15.5f, 21f, 15.95f, 21f, 16.5f)
+                lineTo(21f, 20f)
+                curveTo(21f, 20.55f, 20.55f, 21f, 20f, 21f)
+                curveTo(10.61f, 21f, 3f, 13.39f, 3f, 4f)
+                curveTo(3f, 3.45f, 3.45f, 3f, 4f, 3f)
+                lineTo(7.5f, 3f)
+                curveTo(8.05f, 3f, 8.5f, 3.45f, 8.5f, 4f)
+                curveTo(8.5f, 5.25f, 8.7f, 6.45f, 9.06f, 7.57f)
+                curveTo(9.18f, 7.92f, 9.1f, 8.31f, 8.82f, 8.59f)
+                lineTo(6.62f, 10.79f)
+                close()
+            }
+        }.build()
+    }
+
+    val Badge: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Badge",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(20f, 7f)
+                lineTo(15.5f, 7f)
+                curveTo(15.5f, 5.07f, 13.93f, 3.5f, 12f, 3.5f)
+                curveTo(10.07f, 3.5f, 8.5f, 5.07f, 8.5f, 7f)
+                lineTo(4f, 7f)
+                curveTo(2.9f, 7f, 2f, 7.9f, 2f, 9f)
+                lineTo(2f, 20f)
+                curveTo(2f, 21.1f, 2.9f, 22f, 4f, 22f)
+                lineTo(20f, 22f)
+                curveTo(21.1f, 22f, 22f, 21.1f, 22f, 20f)
+                lineTo(22f, 9f)
+                curveTo(22f, 7.9f, 21.1f, 7f, 20f, 7f)
+                close()
+                moveTo(12f, 5.5f)
+                curveTo(12.83f, 5.5f, 13.5f, 6.17f, 13.5f, 7f)
+                curveTo(13.5f, 7.83f, 12.83f, 8.5f, 12f, 8.5f)
+                curveTo(11.17f, 8.5f, 10.5f, 7.83f, 10.5f, 7f)
+                curveTo(10.5f, 6.17f, 11.17f, 5.5f, 12f, 5.5f)
+                close()
+                moveTo(12f, 11f)
+                curveTo(13.66f, 11f, 15f, 12.34f, 15f, 14f)
+                curveTo(15f, 15.66f, 13.66f, 17f, 12f, 17f)
+                curveTo(10.34f, 17f, 9f, 15.66f, 9f, 14f)
+                curveTo(9f, 12.34f, 10.34f, 11f, 12f, 11f)
+                close()
+                moveTo(18f, 20f)
+                lineTo(6f, 20f)
+                lineTo(6f, 18.93f)
+                curveTo(6f, 17.31f, 8.69f, 16f, 12f, 16f)
+                curveTo(15.31f, 16f, 18f, 17.31f, 18f, 18.93f)
+                lineTo(18f, 20f)
+                close()
+            }
+        }.build()
+    }
 }

@@ -170,16 +170,16 @@ fun ProfileScreen(
                 onToggleNotifications = viewModel::setNotificationsEnabled
             )
 
-            // 7. System & Logout
+            // 7. System Actions
             SystemActionsSection(
                 onResetDemoClick = viewModel::resetDemoData,
                 onLogoutClick = viewModel::openLogoutDialog
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Modals & Bottom Sheets
+        // Edit Profile Dialog
         if (uiState.showEditProfileDialog) {
             EditProfileDialog(
                 name = uiState.editNameInput,
@@ -194,6 +194,7 @@ fun ProfileScreen(
             )
         }
 
+        // Change PIN BottomSheet
         if (uiState.showChangePinSheet) {
             ChangePinBottomSheet(
                 step = uiState.pinStep,
@@ -208,6 +209,7 @@ fun ProfileScreen(
             )
         }
 
+        // Logout Confirmation Dialog
         if (uiState.showLogoutDialog) {
             LogoutDialog(
                 onConfirm = viewModel::confirmLogout,
@@ -230,145 +232,139 @@ private fun UserProfileCard(
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(contentAlignment = Alignment.BottomEnd) {
-                Surface(
-                    shape = CircleShape,
-                    color = PrimaryBlue,
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        val initials = user.fullName
-                            .split(" ")
-                            .filter { it.isNotBlank() }
-                            .mapNotNull { it.firstOrNull()?.toString() }
-                            .take(2)
-                            .joinToString("")
-                            .ifBlank { "AM" }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar Initials Circle
+                val initials = user.fullName.split(" ")
+                    .mapNotNull { it.firstOrNull()?.toString() }
+                    .take(2)
+                    .joinToString("")
+                    .ifEmpty { "U" }
 
-                        Text(
-                            text = initials,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 28.sp
-                        )
-                    }
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(PrimaryBlue, SecondaryTeal)
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = initials,
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
-                // Edit pencil badge
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = user.fullName,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = user.email,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = user.phoneNumber,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp,
+                    color = PrimaryBlue.copy(alpha = 0.1f),
                     modifier = Modifier
-                        .size(28.dp)
+                        .clip(CircleShape)
                         .clickable(onClick = onEditClick)
                 ) {
                     Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.background(PrimaryBlue, CircleShape)
+                        modifier = Modifier.padding(10.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = PocketPayIcons.Edit,
                             contentDescription = "Edit Profile",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
+                            tint = PrimaryBlue,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            Text(
-                text = user.fullName,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = user.email,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = user.phoneNumber,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // KYC Tier Badge
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = SuccessGreen.copy(alpha = 0.12f),
-                modifier = Modifier.padding(horizontal = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(SuccessGreen, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = kycTier,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = SuccessGreen
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(10.dp))
-
+            // User ID & Verification Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onCopyUserId)
+                ) {
                     Text(
-                        text = "Account ID",
+                        text = "ID: ${user.userId}",
                         fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(
-                        text = user.userId,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = PocketPayIcons.ContentCopy,
+                        contentDescription = "Copy User ID",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
 
-                OutlinedButton(
-                    onClick = onEditClick,
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = SuccessGreen.copy(alpha = 0.12f)
                 ) {
-                    Icon(
-                        imageVector = PocketPayIcons.Edit,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "Edit Profile", fontSize = 12.sp)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(SuccessGreen)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = kycTier,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SuccessGreen
+                        )
+                    }
                 }
             }
         }
@@ -386,17 +382,17 @@ private fun VirtualDebitCardSection(
     onToggleReveal: () -> Unit,
     onToggleFreeze: () -> Unit
 ) {
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "PocketPay Virtual Card",
-                fontWeight = FontWeight.Bold,
+                text = "PocketPay Digital Card",
                 fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onBackground
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             TextButton(onClick = onToggleReveal) {
@@ -410,223 +406,133 @@ private fun VirtualDebitCardSection(
                 Text(
                     text = if (isRevealed) "Hide Details" else "Show Details",
                     fontSize = 12.sp,
-                    color = PrimaryBlue
+                    color = PrimaryBlue,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Simulated Virtual Card Surface
-        val gradientColors = if (isFrozen) {
-            listOf(Color(0xFF475569), Color(0xFF1E293B))
-        } else {
-            listOf(WalletCardGradientStart, WalletCardGradientEnd)
-        }
-
         Card(
             shape = RoundedCornerShape(18.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(190.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Brush.linearGradient(gradientColors))
+                    .background(
+                        Brush.linearGradient(
+                            colors = if (isFrozen) {
+                                listOf(Color(0xFF475569), Color(0xFF1E293B))
+                            } else {
+                                listOf(WalletCardGradientStart, WalletCardGradientEnd)
+                            }
+                        )
+                    )
                     .padding(18.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Top: Logo + Status Pill
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "PocketPay",
-                                color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 16.sp,
-                                letterSpacing = 0.5.sp
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "PocketPay Virtual",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        if (isFrozen) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color.White.copy(alpha = 0.2f)
+                                shape = RoundedCornerShape(8.dp),
+                                color = ExpenseRose
                             ) {
                                 Text(
-                                    text = "PLATINUM",
+                                    text = "FROZEN",
                                     color = Color.White,
-                                    fontSize = 9.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
-                        }
-
-                        // Status Badge
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isFrozen) ExpenseRose.copy(alpha = 0.3f) else SuccessGreen.copy(alpha = 0.3f)
-                        ) {
-                            Text(
-                                text = if (isFrozen) "FROZEN" else "ACTIVE",
-                                color = if (isFrozen) Color(0xFFFFB4AB) else Color(0xFF6EE7B7),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-
-                    // Middle: Card Number & Chip
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Chip box
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 32.dp, height = 24.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0xFFD4AF37))
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = ")))",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        val displayCardNumber = if (isRevealed) {
-                            "4812  9012  3456  9924"
                         } else {
-                            "••••  ••••  ••••  9924"
+                            Text(
+                                text = "VISA",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-
-                        Text(
-                            text = displayCardNumber,
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 2.sp
-                        )
                     }
 
-                    // Bottom: Cardholder, Expiry, CVV
+                    // Card Number
+                    Text(
+                        text = if (isRevealed) "4812  9012  3456  9924" else "••••  ••••  ••••  9924",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
                             Text(
-                                text = "CARD HOLDER",
+                                text = "CARDHOLDER",
                                 color = Color.White.copy(alpha = 0.65f),
                                 fontSize = 9.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = cardholderName.uppercase(),
                                 color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "EXPIRES",
-                                    color = Color.White.copy(alpha = 0.65f),
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = if (isRevealed) "08/29" else "••/••",
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "CVV",
-                                    color = Color.White.copy(alpha = 0.65f),
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = if (isRevealed) "742" else "•••",
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "EXPIRES / CVC",
+                                color = Color.White.copy(alpha = 0.65f),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (isRevealed) "08/29 • 742" else "08/29 • •••",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Freeze Switch Bar
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth()
+        // Freeze Card Button
+        OutlinedButton(
+            onClick = onToggleFreeze,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = PocketPayIcons.CreditCard,
-                        contentDescription = null,
-                        tint = if (isFrozen) ExpenseRose else PrimaryBlue,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = if (isFrozen) "Card is Frozen" else "Freeze PocketPay Card",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (isFrozen) "Temporarily lock payments" else "Disable online & in-store payments instantly",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Switch(
-                    checked = isFrozen,
-                    onCheckedChange = { onToggleFreeze() },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = ExpenseRose,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
-                    )
-                )
-            }
+            Icon(
+                imageVector = PocketPayIcons.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = if (isFrozen) SuccessGreen else ExpenseRose
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isFrozen) "Unfreeze PocketPay Card" else "Freeze Card (Block Payments)",
+                color = if (isFrozen) SuccessGreen else ExpenseRose,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp
+            )
         }
     }
 }
@@ -645,55 +551,54 @@ private fun AccountLimitsSection(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             Text(
-                text = "Transaction Limits (Tier 2)",
+                text = "Account Limits & Capacity",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            val usedRatio = (dailyUsedCents.toFloat() / dailyLimitCents.toFloat()).coerceIn(0f, 1f)
 
-            val progress = (dailyUsedCents.toFloat() / dailyLimitCents.toFloat()).coerceIn(0f, 1f)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Daily Transfer Limit",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${Formatters.formatCentsToCurrency(dailyUsedCents)} / ${Formatters.formatCentsToCurrency(dailyLimitCents)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Daily Outflow Used",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${Formatters.formatCentsToCurrency(dailyUsedCents)} / ${Formatters.formatCentsToCurrency(dailyLimitCents)}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                LinearProgressIndicator(
+                    progress = { usedRatio },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = PrimaryBlue,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = PrimaryBlue,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Single Transaction Max",
+                    text = "Single Transaction Limit",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -701,7 +606,7 @@ private fun AccountLimitsSection(
                     text = Formatters.formatCentsToCurrency(singleLimitCents),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -712,7 +617,9 @@ private fun AccountLimitsSection(
 // 4. Linked Accounts Section
 // ---------------------------------------------------------------------------
 @Composable
-private fun LinkedAccountsSection(accounts: List<LinkedBank>) {
+private fun LinkedAccountsSection(
+    accounts: List<LinkedBank>
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -720,13 +627,13 @@ private fun LinkedAccountsSection(accounts: List<LinkedBank>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Linked Payment Methods",
+                text = "Linked Payment Accounts",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             accounts.forEachIndexed { index, bank ->
                 Row(
@@ -744,7 +651,7 @@ private fun LinkedAccountsSection(accounts: List<LinkedBank>) {
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = PocketPayIcons.CreditCard,
+                                    imageVector = PocketPayIcons.AccountBalance,
                                     contentDescription = null,
                                     tint = PrimaryBlue,
                                     modifier = Modifier.size(18.dp)
@@ -771,15 +678,15 @@ private fun LinkedAccountsSection(accounts: List<LinkedBank>) {
 
                     if (bank.isPrimary) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = PrimaryBlue.copy(alpha = 0.1f)
+                            shape = RoundedCornerShape(8.dp),
+                            color = PrimaryBlue.copy(alpha = 0.12f)
                         ) {
                             Text(
                                 text = "PRIMARY",
                                 color = PrimaryBlue,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -794,7 +701,7 @@ private fun LinkedAccountsSection(accounts: List<LinkedBank>) {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Security Center
+// 5. Security Section
 // ---------------------------------------------------------------------------
 @Composable
 private fun SecuritySection(
@@ -810,7 +717,7 @@ private fun SecuritySection(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Security Center",
+                text = "Security & Authentication",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -830,14 +737,14 @@ private fun SecuritySection(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = CircleShape,
-                        color = SecondaryTeal.copy(alpha = 0.1f),
+                        color = PrimaryBlue.copy(alpha = 0.1f),
                         modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = PocketPayIcons.Lock,
                                 contentDescription = null,
-                                tint = SecondaryTeal,
+                                tint = PrimaryBlue,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -847,13 +754,13 @@ private fun SecuritySection(
 
                     Column {
                         Text(
-                            text = "Change Security PIN",
+                            text = "Security PIN",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Demo PIN: $currentPin",
+                            text = "Change 4-digit transfer PIN (Current: $currentPin)",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

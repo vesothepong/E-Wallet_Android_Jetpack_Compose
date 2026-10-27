@@ -67,6 +67,11 @@ fun TransactionItemRow(
             PrimaryBlue,
             PrimaryBlue.copy(alpha = 0.12f)
         )
+        TransactionType.BILL_PAYMENT -> Triple(
+            PocketPayIcons.Receipt,
+            WarningAmber,
+            WarningAmber.copy(alpha = 0.12f)
+        )
     }
 
     val displayTitle = when {
@@ -76,6 +81,7 @@ fun TransactionItemRow(
         transaction.type == TransactionType.DEPOSIT -> "Simulated Bank Deposit"
         transaction.type == TransactionType.WITHDRAW -> "ATM Cash Withdrawal"
         transaction.type == TransactionType.QR_PAYMENT -> "QR Merchant Payment"
+        transaction.type == TransactionType.BILL_PAYMENT -> "Bill Payment to ${transaction.receiverName ?: "Biller"}"
         else -> "Transaction"
     }
 

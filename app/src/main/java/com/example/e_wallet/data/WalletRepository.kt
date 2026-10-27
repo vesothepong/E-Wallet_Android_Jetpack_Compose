@@ -3,6 +3,9 @@ package com.example.e_wallet.data
 import com.example.e_wallet.model.AccountStatus
 import com.example.e_wallet.model.BankAccount
 import com.example.e_wallet.model.Beneficiary
+import com.example.e_wallet.model.BillCategory
+import com.example.e_wallet.model.BillPaymentResult
+import com.example.e_wallet.model.Biller
 import com.example.e_wallet.model.CardNetwork
 import com.example.e_wallet.model.CardType
 import com.example.e_wallet.model.NotificationItem
@@ -58,6 +61,7 @@ interface WalletRepository {
     val cards: StateFlow<List<PaymentCard>>
     val bankAccounts: StateFlow<List<BankAccount>>
     val notifications: StateFlow<List<NotificationItem>>
+    val billers: StateFlow<List<Biller>>
 
     suspend fun deposit(
         amountCents: Long,
@@ -89,6 +93,16 @@ interface WalletRepository {
         note: String = "",
         feeCents: Long = 0L
     ): QrPaymentResult
+
+    suspend fun payBill(
+        billerId: String,
+        billerName: String,
+        category: BillCategory,
+        accountNumber: String,
+        amountCents: Long,
+        feeCents: Long = 0L,
+        note: String = ""
+    ): BillPaymentResult
 
     fun searchReceivers(query: String): List<Beneficiary>
 
@@ -427,6 +441,100 @@ class InMemoryWalletRepository : WalletRepository {
     private val _notifications = MutableStateFlow(generateDefaultNotifications())
     override val notifications: StateFlow<List<NotificationItem>> = _notifications.asStateFlow()
 
+    private val defaultBillers = listOf(
+        Biller(
+            billerId = "biller_elec_01",
+            name = "City Power & Electric",
+            category = BillCategory.ELECTRICITY,
+            iconName = "FlashOn",
+            accountHint = "e.g. ELEC-992144",
+            feeCents = 0L,
+            standardAmountsCents = listOf(2500L, 5000L, 7500L, 10000L),
+            isPopular = true,
+            providerCode = "CPE"
+        ),
+        Biller(
+            billerId = "biller_water_01",
+            name = "Metro Clean Water Authority",
+            category = BillCategory.WATER,
+            iconName = "Water",
+            accountHint = "e.g. WTR-440182",
+            feeCents = 0L,
+            standardAmountsCents = listOf(1500L, 3000L, 4500L, 6000L),
+            isPopular = true,
+            providerCode = "MCW"
+        ),
+        Biller(
+            billerId = "biller_net_01",
+            name = "Swift FiberNet Broadband",
+            category = BillCategory.INTERNET,
+            iconName = "Wifi",
+            accountHint = "e.g. FIB-881920",
+            feeCents = 0L,
+            standardAmountsCents = listOf(3500L, 5500L, 8000L, 12000L),
+            isPopular = true,
+            providerCode = "SFN"
+        ),
+        Biller(
+            billerId = "biller_mob_01",
+            name = "StarMobile 5G Top-Up",
+            category = BillCategory.MOBILE_TOPUP,
+            iconName = "Smartphone",
+            accountHint = "e.g. +1 (555) 019-2834",
+            feeCents = 0L,
+            standardAmountsCents = listOf(1000L, 2000L, 3000L, 5000L),
+            isPopular = true,
+            providerCode = "SM5G"
+        ),
+        Biller(
+            billerId = "biller_mob_02",
+            name = "NovaTel Prepaid Airtime",
+            category = BillCategory.MOBILE_TOPUP,
+            iconName = "Smartphone",
+            accountHint = "e.g. +1 (555) 774-9021",
+            feeCents = 0L,
+            standardAmountsCents = listOf(500L, 1500L, 2500L, 5000L),
+            isPopular = false,
+            providerCode = "NVT"
+        ),
+        Biller(
+            billerId = "biller_tv_01",
+            name = "SkyStream Cable & TV",
+            category = BillCategory.INTERNET,
+            iconName = "Tv",
+            accountHint = "e.g. SKY-310492",
+            feeCents = 0L,
+            standardAmountsCents = listOf(2000L, 4000L, 6000L, 8500L),
+            isPopular = false,
+            providerCode = "SKY"
+        ),
+        Biller(
+            billerId = "biller_edu_01",
+            name = "Horizon State University Tuition",
+            category = BillCategory.EDUCATION,
+            iconName = "School",
+            accountHint = "e.g. STU-2026-991",
+            feeCents = 50L,
+            standardAmountsCents = listOf(10000L, 25000L, 50000L),
+            isPopular = false,
+            providerCode = "HSU"
+        ),
+        Biller(
+            billerId = "biller_gov_01",
+            name = "Metropolitan Municipal Tax",
+            category = BillCategory.GOVERNMENT,
+            iconName = "AccountBalance",
+            accountHint = "e.g. TAX-778819",
+            feeCents = 50L,
+            standardAmountsCents = listOf(5000L, 10000L, 20000L),
+            isPopular = false,
+            providerCode = "MMT"
+        )
+    )
+
+    private val _billers = MutableStateFlow(defaultBillers)
+    override val billers: StateFlow<List<Biller>> = _billers.asStateFlow()
+
     private val _unreadNotificationsCount = MutableStateFlow(3)
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
 
@@ -447,6 +555,7 @@ class InMemoryWalletRepository : WalletRepository {
     private val withdrawMutex = Mutex()
     private val sendMutex = Mutex()
     private val qrPayMutex = Mutex()
+    private val billPayMutex = Mutex()
 
     override suspend fun deposit(
         amountCents: Long,
@@ -698,6 +807,79 @@ class InMemoryWalletRepository : WalletRepository {
         return QrPaymentResult.Success(tx, newBalance)
     }
 
+    override suspend fun payBill(
+        billerId: String,
+        billerName: String,
+        category: BillCategory,
+        accountNumber: String,
+        amountCents: Long,
+        feeCents: Long,
+        note: String
+    ): BillPaymentResult = billPayMutex.withLock {
+        if (amountCents <= 0L) {
+            return@withLock BillPaymentResult.Error("Bill amount must be greater than zero.")
+        }
+        if (accountNumber.isBlank()) {
+            return@withLock BillPaymentResult.Error("Please enter a valid account or meter number.")
+        }
+        if (_isCardFrozen.value) {
+            return@withLock BillPaymentResult.Error(
+                "PocketPay account card is currently frozen. Please unfreeze before paying bills."
+            )
+        }
+
+        val totalDebit = amountCents + feeCents
+        val currentWlt = _currentWallet.value
+        if (totalDebit > currentWlt.availableBalance) {
+            return@withLock BillPaymentResult.Error(
+                "Insufficient wallet balance. Available: ${Formatters.formatCentsToCurrency(currentWlt.availableBalance)}, Required: ${Formatters.formatCentsToCurrency(totalDebit)}"
+            )
+        }
+
+        val newBalance = currentWlt.currentBalance - totalDebit
+        val newAvailable = currentWlt.availableBalance - totalDebit
+        val timestamp = System.currentTimeMillis()
+        val randomSuffix = (100000..999999).random()
+        val refNumber = "REF-BILL-${timestamp.toString().takeLast(6)}-$randomSuffix"
+
+        val tx = Transaction(
+            transactionId = "tx_bill_${timestamp}",
+            type = TransactionType.BILL_PAYMENT,
+            senderId = _currentUser.value.userId,
+            senderName = _currentUser.value.fullName,
+            receiverId = billerId,
+            receiverName = billerName,
+            amount = amountCents,
+            fee = feeCents,
+            timestamp = timestamp,
+            description = note.ifBlank { "Paid $billerName ($accountNumber)" },
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = refNumber
+        )
+
+        // Single atomic state update
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        addNotification(
+            title = "Bill Payment Successful",
+            message = "Paid ${Formatters.formatCentsToCurrency(amountCents)} to $billerName (Acc: $accountNumber). Ref: $refNumber",
+            type = NotificationType.TRANSACTION,
+            amountCents = totalDebit,
+            transactionId = tx.transactionId
+        )
+
+        return@withLock BillPaymentResult.Success(
+            transaction = tx,
+            newBalance = newBalance,
+            billerName = billerName,
+            referenceNumber = refNumber
+        )
+    }
+
     override fun searchReceivers(query: String): List<Beneficiary> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return _beneficiaries.value
@@ -856,6 +1038,7 @@ class InMemoryWalletRepository : WalletRepository {
         _cards.value = defaultCards
         _bankAccounts.value = defaultBankAccounts
         _notifications.value = generateDefaultNotifications()
+        _billers.value = defaultBillers
         _unreadNotificationsCount.value = 3
         _currentPin.value = defaultPin
         _isBiometricsEnabled.value = true

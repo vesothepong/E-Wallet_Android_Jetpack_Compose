@@ -83,6 +83,9 @@ fun TransactionDetailSheet(
                 TransactionType.QR_PAYMENT -> Triple(
                     PocketPayIcons.QrCode, PrimaryBlue, PrimaryBlue.copy(alpha = 0.12f)
                 )
+                TransactionType.BILL_PAYMENT -> Triple(
+                    PocketPayIcons.Receipt, WarningAmber, WarningAmber.copy(alpha = 0.12f)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -159,6 +162,7 @@ fun TransactionDetailSheet(
                             TransactionType.DEPOSIT -> "Simulated Bank Deposit"
                             TransactionType.WITHDRAW -> "ATM Cash Withdrawal"
                             TransactionType.QR_PAYMENT -> "QR Merchant Payment"
+                            TransactionType.BILL_PAYMENT -> "Bill Payment to ${transaction.receiverName ?: "Biller"}"
                         }
                     }
                     DetailRow(label = "Description", value = title)

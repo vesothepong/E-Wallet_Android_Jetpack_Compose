@@ -25,7 +25,7 @@ object Formatters {
         val formatted = formatCentsToCurrency(absCents)
         return when (type) {
             TransactionType.RECEIVE, TransactionType.DEPOSIT -> "+$formatted"
-            TransactionType.SEND, TransactionType.WITHDRAW, TransactionType.QR_PAYMENT -> "-$formatted"
+            TransactionType.SEND, TransactionType.WITHDRAW, TransactionType.QR_PAYMENT, TransactionType.BILL_PAYMENT -> "-$formatted"
         }
     }
 

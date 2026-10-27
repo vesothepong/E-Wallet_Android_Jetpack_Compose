@@ -100,7 +100,7 @@ class HomeViewModel(
         val completedTxs = userTransactions.filter { it.status == TransactionStatus.COMPLETED }
 
         val totalSent = completedTxs
-            .filter { it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT }
+            .filter { it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT || it.type == TransactionType.BILL_PAYMENT }
             .sumOf { it.amount + it.fee }
 
         val totalReceived = completedTxs
@@ -120,7 +120,7 @@ class HomeViewModel(
         val filtered = when (filter) {
             TransactionFilter.ALL -> userTransactions
             TransactionFilter.SEND -> userTransactions.filter {
-                it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT
+                it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT || it.type == TransactionType.BILL_PAYMENT
             }
             TransactionFilter.RECEIVE -> userTransactions.filter { it.type == TransactionType.RECEIVE }
             TransactionFilter.DEPOSIT -> userTransactions.filter { it.type == TransactionType.DEPOSIT }

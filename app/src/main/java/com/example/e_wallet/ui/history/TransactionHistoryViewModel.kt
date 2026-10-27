@@ -70,7 +70,7 @@ class TransactionHistoryViewModel(
         val typeFiltered = when (filter) {
             TransactionFilter.ALL -> userTxs
             TransactionFilter.SEND -> userTxs.filter {
-                it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT
+                it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT || it.type == TransactionType.BILL_PAYMENT
             }
             TransactionFilter.RECEIVE -> userTxs.filter { it.type == TransactionType.RECEIVE }
             TransactionFilter.DEPOSIT -> userTxs.filter { it.type == TransactionType.DEPOSIT }
@@ -101,7 +101,8 @@ class TransactionHistoryViewModel(
             .filter {
                 it.type == TransactionType.SEND ||
                     it.type == TransactionType.QR_PAYMENT ||
-                    it.type == TransactionType.WITHDRAW
+                    it.type == TransactionType.WITHDRAW ||
+                    it.type == TransactionType.BILL_PAYMENT
             }
             .sumOf { it.amount + it.fee }
 

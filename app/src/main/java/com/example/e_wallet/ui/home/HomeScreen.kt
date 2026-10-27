@@ -25,7 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.e_wallet.model.Beneficiary
+import com.example.e_wallet.model.BillCategory
 import com.example.e_wallet.model.Transaction
+import com.example.e_wallet.ui.bills.BillPaymentBottomSheet
 import com.example.e_wallet.ui.components.BottomNavTab
 import com.example.e_wallet.ui.components.DashboardStatsSection
 import com.example.e_wallet.ui.components.DemoWarningBanner
@@ -34,6 +36,7 @@ import com.example.e_wallet.ui.components.PocketPayBottomBar
 import com.example.e_wallet.ui.components.QuickActionsSection
 import com.example.e_wallet.ui.components.RecentBeneficiariesRow
 import com.example.e_wallet.ui.components.RecentTransactionsSection
+import com.example.e_wallet.ui.components.ServicesSection
 import com.example.e_wallet.ui.components.WalletCard
 import com.example.e_wallet.ui.deposit.DepositBottomSheet
 import com.example.e_wallet.ui.receive.ReceiveBottomSheet
@@ -49,6 +52,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
+    onNavigateToBills: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -59,6 +63,8 @@ fun HomeScreen(
     var showSendSheet by remember { mutableStateOf(false) }
     var showReceiveSheet by remember { mutableStateOf(false) }
     var showScanSheet by remember { mutableStateOf(false) }
+    var showBillPaymentSheet by remember { mutableStateOf(false) }
+    var selectedBillCategory by remember { mutableStateOf<BillCategory?>(null) }
     var selectedBeneficiaryForSend by remember { mutableStateOf<Beneficiary?>(null) }
 
     // Show snackbar feedback when triggered
@@ -128,6 +134,11 @@ fun HomeScreen(
             onResetDemoClick = viewModel::resetDemoData,
             onProfileClick = onNavigateToProfile,
             onWalletClick = onNavigateToWallet,
+            onCategoryClick = { category ->
+                selectedBillCategory = category
+                showBillPaymentSheet = true
+            },
+            onServicesSeeAllClick = onNavigateToBills,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = onNavigateToHistory,
             modifier = Modifier.padding(innerPadding)
@@ -182,6 +193,17 @@ fun HomeScreen(
                 repository = viewModel.repository
             )
         }
+
+        if (showBillPaymentSheet) {
+            BillPaymentBottomSheet(
+                initialCategory = selectedBillCategory,
+                onDismiss = {
+                    showBillPaymentSheet = false
+                    selectedBillCategory = null
+                },
+                repository = viewModel.repository
+            )
+        }
     }
 }
 
@@ -190,6 +212,8 @@ fun HomeScreenContent(
     uiState: HomeUiState,
     onToggleBalance: () -> Unit,
     onQuickAction: (HomeQuickAction) -> Unit,
+    onCategoryClick: (BillCategory?) -> Unit = {},
+    onServicesSeeAllClick: () -> Unit = {},
     onFilterSelect: (TransactionFilter) -> Unit,
     onBeneficiaryClick: (Beneficiary) -> Unit,
     onAddBeneficiaryClick: () -> Unit,
@@ -238,7 +262,13 @@ fun HomeScreenContent(
             onActionClick = onQuickAction
         )
 
-        // 5. Financial Overview: Derived Dashboard KPIs
+        // 5. Pay Bills & Utilities Section
+        ServicesSection(
+            onCategoryClick = onCategoryClick,
+            onSeeAllClick = onServicesSeeAllClick
+        )
+
+        // 6. Financial Overview: Derived Dashboard KPIs
         DashboardStatsSection(
             totalReceivedCents = uiState.totalReceivedCents,
             totalSentCents = uiState.totalSentCents,

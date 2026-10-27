@@ -1025,4 +1025,234 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val Water: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Water",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(12f, 2.69f)
+                lineTo(7.05f, 7.64f)
+                curveTo(4.32f, 10.37f, 4.32f, 14.8f, 7.05f, 17.53f)
+                curveTo(8.41f, 18.9f, 10.21f, 19.58f, 12f, 19.58f)
+                curveTo(13.79f, 19.58f, 15.59f, 18.9f, 16.95f, 17.53f)
+                curveTo(19.68f, 14.8f, 19.68f, 10.37f, 16.95f, 7.64f)
+                lineTo(12f, 2.69f)
+                close()
+            }
+        }.build()
+    }
+
+    val Wifi: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Wifi",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(12.01f, 21.49f)
+                lineTo(23.64f, 7f)
+                curveTo(23.18f, 6.65f, 18.79f, 3.22f, 12.01f, 3.22f)
+                curveTo(5.21f, 3.22f, 0.83f, 6.65f, 0.36f, 7f)
+                lineTo(12.01f, 21.49f)
+                close()
+            }
+        }.build()
+    }
+
+    val Smartphone: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Smartphone",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(17f, 1.01f)
+                lineTo(7f, 1f)
+                curveTo(5.9f, 1f, 5f, 1.9f, 5f, 3f)
+                lineTo(5f, 21f)
+                curveTo(5f, 22.1f, 5.9f, 23f, 7f, 23f)
+                lineTo(17f, 23f)
+                curveTo(18.1f, 23f, 19f, 22.1f, 19f, 21f)
+                lineTo(19f, 3f)
+                curveTo(19f, 1.9f, 18.1f, 1.01f, 17f, 1.01f)
+                close()
+                moveTo(17f, 19f)
+                lineTo(7f, 19f)
+                lineTo(7f, 5f)
+                lineTo(17f, 5f)
+                lineTo(17f, 19f)
+                close()
+            }
+        }.build()
+    }
+
+    val Tv: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Tv",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(21f, 3f)
+                lineTo(3f, 3f)
+                curveTo(1.9f, 3f, 1f, 3.9f, 1f, 5f)
+                lineTo(1f, 17f)
+                curveTo(1f, 18.1f, 1.9f, 19f, 3f, 19f)
+                lineTo(8f, 19f)
+                lineTo(8f, 21f)
+                lineTo(16f, 21f)
+                lineTo(16f, 19f)
+                lineTo(21f, 19f)
+                curveTo(22.1f, 19f, 23f, 18.1f, 23f, 17f)
+                lineTo(23f, 5f)
+                curveTo(23f, 3.9f, 22.1f, 3f, 21f, 3f)
+                close()
+                moveTo(21f, 17f)
+                lineTo(3f, 17f)
+                lineTo(3f, 5f)
+                lineTo(21f, 5f)
+                lineTo(21f, 17f)
+                close()
+            }
+        }.build()
+    }
+
+    val School: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "School",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(5f, 13.18f)
+                lineTo(5f, 17.18f)
+                lineTo(12f, 21f)
+                lineTo(19f, 17.18f)
+                lineTo(19f, 13.18f)
+                lineTo(12f, 17f)
+                lineTo(5f, 13.18f)
+                close()
+                moveTo(12f, 3f)
+                lineTo(1f, 9f)
+                lineTo(12f, 15f)
+                lineTo(21f, 10.09f)
+                lineTo(21f, 17f)
+                lineTo(23f, 17f)
+                lineTo(23f, 9f)
+                lineTo(12f, 3f)
+                close()
+            }
+        }.build()
+    }
+
+    val AccountBalance: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "AccountBalance",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(4f, 10f)
+                lineTo(6.5f, 10f)
+                lineTo(6.5f, 17f)
+                lineTo(4f, 17f)
+                close()
+                moveTo(10.75f, 10f)
+                lineTo(13.25f, 10f)
+                lineTo(13.25f, 17f)
+                lineTo(10.75f, 17f)
+                close()
+                moveTo(2f, 22f)
+                lineTo(22f, 22f)
+                lineTo(22f, 19f)
+                lineTo(2f, 19f)
+                close()
+                moveTo(17.5f, 10f)
+                lineTo(20f, 10f)
+                lineTo(20f, 17f)
+                lineTo(17.5f, 17f)
+                close()
+                moveTo(12f, 1f)
+                lineTo(2f, 6f)
+                lineTo(2f, 8f)
+                lineTo(22f, 8f)
+                lineTo(22f, 6f)
+                close()
+            }
+        }.build()
+    }
+
+    val ReceiptLong: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "ReceiptLong",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(19.5f, 3.5f)
+                lineTo(18f, 2f)
+                lineTo(16.5f, 3.5f)
+                lineTo(15f, 2f)
+                lineTo(13.5f, 3.5f)
+                lineTo(12f, 2f)
+                lineTo(10.5f, 3.5f)
+                lineTo(9f, 2f)
+                lineTo(7.5f, 3.5f)
+                lineTo(6f, 2f)
+                lineTo(4.5f, 3.5f)
+                lineTo(3f, 2f)
+                lineTo(3f, 22f)
+                lineTo(4.5f, 20.5f)
+                lineTo(6f, 22f)
+                lineTo(7.5f, 20.5f)
+                lineTo(9f, 22f)
+                lineTo(10.5f, 20.5f)
+                lineTo(12f, 22f)
+                lineTo(13.5f, 20.5f)
+                lineTo(15f, 22f)
+                lineTo(16.5f, 20.5f)
+                lineTo(18f, 22f)
+                lineTo(19.5f, 20.5f)
+                lineTo(21f, 22f)
+                lineTo(21f, 2f)
+                lineTo(19.5f, 3.5f)
+                close()
+                moveTo(15f, 7f)
+                lineTo(9f, 7f)
+                lineTo(9f, 5f)
+                lineTo(15f, 5f)
+                lineTo(15f, 7f)
+                close()
+                moveTo(15f, 11f)
+                lineTo(9f, 11f)
+                lineTo(9f, 9f)
+                lineTo(15f, 9f)
+                lineTo(15f, 11f)
+                close()
+                moveTo(15f, 15f)
+                lineTo(9f, 15f)
+                lineTo(9f, 13f)
+                lineTo(15f, 13f)
+                lineTo(15f, 15f)
+                close()
+            }
+        }.build()
+    }
 }

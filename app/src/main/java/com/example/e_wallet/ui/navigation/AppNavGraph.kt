@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.e_wallet.ui.bills.BillPaymentScreen
 import com.example.e_wallet.ui.history.TransactionHistoryScreen
 import com.example.e_wallet.ui.home.HomeScreen
 import com.example.e_wallet.ui.notifications.NotificationsScreen
@@ -18,6 +19,7 @@ object AppDestinations {
     const val PROFILE = "profile"
     const val WALLET = "wallet"
     const val NOTIFICATIONS = "notifications"
+    const val BILL_PAYMENT = "bill_payment"
 }
 
 @Composable
@@ -41,6 +43,9 @@ fun AppNavGraph(
                 },
                 onNavigateToNotifications = {
                     navController.navigate(AppDestinations.NOTIFICATIONS)
+                },
+                onNavigateToBills = {
+                    navController.navigate(AppDestinations.BILL_PAYMENT)
                 }
             )
         }
@@ -65,6 +70,12 @@ fun AppNavGraph(
 
         composable(AppDestinations.NOTIFICATIONS) {
             NotificationsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppDestinations.BILL_PAYMENT) {
+            BillPaymentScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

@@ -417,6 +417,7 @@ class ProfileViewModel(
     }
 
     fun confirmLogout() {
+        repository.logout()
         _localState.update {
             it.copy(
                 showLogoutDialog = false,

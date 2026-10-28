@@ -5,6 +5,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.e_wallet.ui.auth.LoginScreen
+import com.example.e_wallet.ui.auth.OnboardingScreen
+import com.example.e_wallet.ui.auth.SplashScreen
 import com.example.e_wallet.ui.bills.BillPaymentScreen
 import com.example.e_wallet.ui.history.TransactionHistoryScreen
 import com.example.e_wallet.ui.home.HomeScreen
@@ -12,8 +15,11 @@ import com.example.e_wallet.ui.notifications.NotificationsScreen
 import com.example.e_wallet.ui.profile.ProfileScreen
 import com.example.e_wallet.ui.wallet.WalletScreen
 
-/** Top-level navigation destinations. */
+/** Top-level navigation destinations for PocketPay. */
 object AppDestinations {
+    const val SPLASH = "splash"
+    const val ONBOARDING = "onboarding"
+    const val LOGIN = "login"
     const val HOME = "home"
     const val TRANSACTION_HISTORY = "transaction_history"
     const val PROFILE = "profile"
@@ -28,8 +34,48 @@ fun AppNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = AppDestinations.HOME
+        startDestination = AppDestinations.SPLASH
     ) {
+        composable(AppDestinations.SPLASH) {
+            SplashScreen(
+                onNavigateToOnboarding = {
+                    navController.navigate(AppDestinations.ONBOARDING) {
+                        popUpTo(AppDestinations.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate(AppDestinations.LOGIN) {
+                        popUpTo(AppDestinations.SPLASH) { inclusive = true }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(AppDestinations.HOME) {
+                        popUpTo(AppDestinations.SPLASH) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(AppDestinations.ONBOARDING) {
+            OnboardingScreen(
+                onFinishOnboarding = {
+                    navController.navigate(AppDestinations.LOGIN) {
+                        popUpTo(AppDestinations.ONBOARDING) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(AppDestinations.LOGIN) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(AppDestinations.HOME) {
+                        popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(AppDestinations.HOME) {
             HomeScreen(
                 onNavigateToHistory = {
@@ -58,7 +104,12 @@ fun AppNavGraph(
 
         composable(AppDestinations.PROFILE) {
             ProfileScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onLogoutClick = {
+                    navController.navigate(AppDestinations.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

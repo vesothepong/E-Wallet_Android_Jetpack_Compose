@@ -75,7 +75,8 @@ import com.example.e_wallet.util.Formatters
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -212,7 +213,10 @@ fun ProfileScreen(
         // Logout Confirmation Dialog
         if (uiState.showLogoutDialog) {
             LogoutDialog(
-                onConfirm = viewModel::confirmLogout,
+                onConfirm = {
+                    viewModel.confirmLogout()
+                    onLogoutClick()
+                },
                 onDismiss = viewModel::dismissLogoutDialog
             )
         }

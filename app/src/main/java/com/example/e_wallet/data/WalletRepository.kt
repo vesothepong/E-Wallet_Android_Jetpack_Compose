@@ -62,6 +62,14 @@ interface WalletRepository {
     val bankAccounts: StateFlow<List<BankAccount>>
     val notifications: StateFlow<List<NotificationItem>>
     val billers: StateFlow<List<Biller>>
+    val isAuthenticated: StateFlow<Boolean>
+    val isOnboardingCompleted: StateFlow<Boolean>
+
+    fun login(identifier: String, pin: String): Boolean
+    fun loginWithBiometrics(): Boolean
+    fun register(fullName: String, email: String, phoneNumber: String, pin: String): Boolean
+    fun logout()
+    fun completeOnboarding()
 
     suspend fun deposit(
         amountCents: Long,
@@ -554,6 +562,12 @@ class InMemoryWalletRepository : WalletRepository {
     private val _isCardFrozen = MutableStateFlow(false)
     override val isCardFrozen: StateFlow<Boolean> = _isCardFrozen.asStateFlow()
 
+    private val _isAuthenticated = MutableStateFlow(false)
+    override val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+
+    private val _isOnboardingCompleted = MutableStateFlow(false)
+    override val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
+
     private val depositMutex = Mutex()
     private val withdrawMutex = Mutex()
     private val sendMutex = Mutex()
@@ -1033,6 +1047,78 @@ class InMemoryWalletRepository : WalletRepository {
         syncUnreadNotificationsCount()
     }
 
+    override fun login(identifier: String, pin: String): Boolean {
+        val trimmedId = identifier.trim()
+        val user = _currentUser.value
+        val isUserMatch = trimmedId.equals(user.email, ignoreCase = true) ||
+                trimmedId == user.phoneNumber ||
+                trimmedId.equals(user.fullName, ignoreCase = true) ||
+                trimmedId.equals("demo", ignoreCase = true) ||
+                trimmedId.equals("alex", ignoreCase = true)
+
+        if (isUserMatch && pin == _currentPin.value) {
+            _isAuthenticated.value = true
+            return true
+        }
+        return false
+    }
+
+    override fun loginWithBiometrics(): Boolean {
+        if (_isBiometricsEnabled.value) {
+            _isAuthenticated.value = true
+            return true
+        }
+        return false
+    }
+
+    override fun register(fullName: String, email: String, phoneNumber: String, pin: String): Boolean {
+        val cleanName = fullName.trim()
+        val cleanEmail = email.trim()
+        val cleanPhone = phoneNumber.trim()
+
+        if (cleanName.length < 2 || !cleanEmail.contains("@") || cleanPhone.length < 6 || pin.length != 4) {
+            return false
+        }
+
+        val newUser = User(
+            userId = "usr_${System.currentTimeMillis()}",
+            fullName = cleanName,
+            email = cleanEmail,
+            phoneNumber = cleanPhone,
+            accountStatus = AccountStatus.ACTIVE,
+            role = "VERIFIED_USER"
+        )
+        val newWallet = Wallet(
+            walletId = "wlt_${System.currentTimeMillis()}",
+            walletNumber = "PKP-${(1000..9999).random()}-${(1000..9999).random()}",
+            userId = newUser.userId,
+            currentBalance = 10000L, // $100.00 welcome bonus for new accounts
+            availableBalance = 10000L,
+            currency = "USD"
+        )
+
+        _currentUser.value = newUser
+        _currentWallet.value = newWallet
+        _currentPin.value = pin
+        _isAuthenticated.value = true
+        _isOnboardingCompleted.value = true
+
+        addNotification(
+            title = "Welcome to PocketPay!",
+            message = "Your account is activated with a $100.00 simulated welcome balance.",
+            type = NotificationType.SYSTEM
+        )
+        return true
+    }
+
+    override fun logout() {
+        _isAuthenticated.value = false
+    }
+
+    override fun completeOnboarding() {
+        _isOnboardingCompleted.value = true
+    }
+
     override fun resetDemoData() {
         _currentUser.value = defaultUser
         _currentWallet.value = defaultWallet
@@ -1047,6 +1133,8 @@ class InMemoryWalletRepository : WalletRepository {
         _isBiometricsEnabled.value = true
         _isNotificationsEnabled.value = true
         _isCardFrozen.value = false
+        _isAuthenticated.value = false
+        _isOnboardingCompleted.value = false
     }
 
     override fun updateUser(user: User) {

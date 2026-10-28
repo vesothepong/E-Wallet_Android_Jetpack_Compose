@@ -1360,4 +1360,49 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val Fingerprint: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Fingerprint",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(17.81f, 4.47f)
+                curveTo(16.14f, 3.23f, 14.14f, 2.5f, 12f, 2.5f)
+                curveTo(9.86f, 2.5f, 7.86f, 3.23f, 6.19f, 4.47f)
+                lineTo(7.33f, 6.01f)
+                curveTo(8.68f, 5.01f, 10.28f, 4.5f, 12f, 4.5f)
+                curveTo(13.72f, 4.5f, 15.32f, 5.01f, 16.67f, 6.01f)
+                lineTo(17.81f, 4.47f)
+                close()
+                moveTo(12f, 6.5f)
+                curveTo(8.41f, 6.5f, 5.5f, 9.41f, 5.5f, 13f)
+                curveTo(5.5f, 14.73f, 6.17f, 16.31f, 7.27f, 17.48f)
+                lineTo(8.69f, 16.06f)
+                curveTo(7.96f, 15.28f, 7.5f, 14.19f, 7.5f, 13f)
+                curveTo(7.5f, 10.51f, 9.51f, 8.5f, 12f, 8.5f)
+                curveTo(14.49f, 8.5f, 16.5f, 10.51f, 16.5f, 13f)
+                curveTo(16.5f, 15.54f, 15.26f, 17.78f, 13.38f, 19.14f)
+                lineTo(14.54f, 20.76f)
+                curveTo(16.89f, 19.06f, 18.5f, 16.22f, 18.5f, 13f)
+                curveTo(18.5f, 9.41f, 15.59f, 6.5f, 12f, 6.5f)
+                close()
+                moveTo(12f, 10.5f)
+                curveTo(10.62f, 10.5f, 9.5f, 11.62f, 9.5f, 13f)
+                curveTo(9.5f, 14.88f, 10.56f, 16.51f, 12.12f, 17.33f)
+                lineTo(13.06f, 15.57f)
+                curveTo(12.12f, 15.07f, 11.5f, 14.11f, 11.5f, 13f)
+                curveTo(11.5f, 12.72f, 11.72f, 12.5f, 12f, 12.5f)
+                curveTo(12.28f, 12.5f, 12.5f, 12.72f, 12.5f, 13f)
+                curveTo(12.5f, 14.85f, 13.88f, 16.4f, 15.71f, 16.71f)
+                lineTo(16.05f, 14.74f)
+                curveTo(15.15f, 14.59f, 14.5f, 13.84f, 14.5f, 13f)
+                curveTo(14.5f, 11.62f, 13.38f, 10.5f, 12f, 10.5f)
+                close()
+            }
+        }.build()
+    }
 }

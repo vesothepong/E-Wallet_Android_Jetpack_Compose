@@ -80,6 +80,7 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(uiState.snackbarMessage) {

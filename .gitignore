@@ -15,3 +15,8 @@ local.properties
 # Android Studio / IntelliJ local machine cache and workspace files
 .idea/workspace.xml
 .idea/caches/
+.idea/modules/
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+*.iml
+.DS_Store

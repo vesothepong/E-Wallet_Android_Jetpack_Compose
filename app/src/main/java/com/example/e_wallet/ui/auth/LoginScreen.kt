@@ -34,7 +34,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -139,7 +139,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Auth Mode Selector (Sign In vs Register)
-            TabRow(
+            PrimaryTabRow(
                 selectedTabIndex = if (uiState.isRegisterMode) 1 else 0,
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier

@@ -11,3 +11,7 @@
 
 # Local machine configuration
 local.properties
+
+# Android Studio / IntelliJ local machine cache and workspace files
+.idea/workspace.xml
+.idea/caches/

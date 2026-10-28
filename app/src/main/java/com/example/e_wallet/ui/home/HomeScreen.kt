@@ -97,7 +97,8 @@ fun HomeScreen(
                             onNavigateToHistory()
                         }
                         BottomNavTab.PROFILE -> {
-                            viewModel.onProfileClicked()
+                            currentTab = BottomNavTab.HOME
+                            onNavigateToProfile()
                         }
                     }
                 }

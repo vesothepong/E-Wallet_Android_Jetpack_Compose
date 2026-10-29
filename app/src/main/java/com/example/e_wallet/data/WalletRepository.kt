@@ -87,6 +87,7 @@ interface WalletRepository {
     val splitBills: StateFlow<List<SplitBill>>
     val isAuthenticated: StateFlow<Boolean>
     val isOnboardingCompleted: StateFlow<Boolean>
+    val selectedCurrency: StateFlow<String>
 
     fun login(identifier: String, pin: String): Boolean
     fun loginWithBiometrics(): Boolean
@@ -176,6 +177,7 @@ interface WalletRepository {
     fun verifyPin(pin: String): Boolean
     fun changePin(oldPin: String, newPin: String): PinChangeResult
     fun updateProfile(fullName: String, email: String, phoneNumber: String): Boolean
+    fun setCurrency(currency: String)
     fun setBiometricsEnabled(enabled: Boolean)
     fun setNotificationsEnabled(enabled: Boolean)
     fun setCardFrozen(frozen: Boolean)
@@ -690,6 +692,9 @@ class InMemoryWalletRepository : WalletRepository {
     private val _isOnboardingCompleted = MutableStateFlow(false)
     override val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
 
+    private val _selectedCurrency = MutableStateFlow("USD")
+    override val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
+
     private val defaultCategoryBudgets = listOf(
         CategoryBudget(SpendingCategory.FOOD_DINING, 20000L),      // $200.00
         CategoryBudget(SpendingCategory.BILLS_UTILITIES, 30000L),  // $300.00
@@ -859,6 +864,9 @@ class InMemoryWalletRepository : WalletRepository {
         destinationDescription: String,
         feeCents: Long
     ): WithdrawResult = withdrawMutex.withLock {
+        if (_isCardFrozen.value) {
+            return WithdrawResult.Error("Your PocketPay card/wallet is currently frozen. Please unfreeze in Wallet or Profile settings to cash out.")
+        }
         if (amountCents <= 0L) {
             return WithdrawResult.Error("Withdrawal amount must be greater than $0.00.")
         }
@@ -921,6 +929,9 @@ class InMemoryWalletRepository : WalletRepository {
         note: String,
         feeCents: Long
     ): SendResult = sendMutex.withLock {
+        if (_isCardFrozen.value) {
+            return SendResult.Error("Your PocketPay card/wallet is currently frozen. Please unfreeze in Wallet or Profile settings to send money.")
+        }
         if (amountCents <= 0L) {
             return SendResult.Error("Transfer amount must be greater than $0.00.")
         }
@@ -990,6 +1001,9 @@ class InMemoryWalletRepository : WalletRepository {
         note: String,
         feeCents: Long
     ): QrPaymentResult = qrPayMutex.withLock {
+        if (_isCardFrozen.value) {
+            return QrPaymentResult.Error("Your PocketPay card/wallet is currently frozen. Please unfreeze in Wallet or Profile settings to make QR payments.")
+        }
         if (amountCents <= 0L) {
             return QrPaymentResult.Error("Payment amount must be greater than $0.00.")
         }
@@ -1448,6 +1462,12 @@ class InMemoryWalletRepository : WalletRepository {
             phoneNumber = phoneNumber.trim()
         )
         return true
+    }
+
+    override fun setCurrency(currency: String) {
+        _selectedCurrency.value = currency
+        _currentWallet.value = _currentWallet.value.copy(currency = currency)
+        Formatters.defaultCurrency = currency
     }
 
     override fun setBiometricsEnabled(enabled: Boolean) {
@@ -1912,6 +1932,8 @@ class InMemoryWalletRepository : WalletRepository {
         _isBiometricsEnabled.value = true
         _isNotificationsEnabled.value = true
         _isCardFrozen.value = false
+        _selectedCurrency.value = "USD"
+        Formatters.defaultCurrency = "USD"
         _isAuthenticated.value = false
         _isOnboardingCompleted.value = false
     }

@@ -5,8 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.e_wallet.data.PinChangeResult
 import com.example.e_wallet.data.WalletRepository
 import com.example.e_wallet.data.WalletRepositoryProvider
+import com.example.e_wallet.model.BankAccount
+import com.example.e_wallet.model.Transaction
+import com.example.e_wallet.model.TransactionStatus
+import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.model.User
 import com.example.e_wallet.model.Wallet
+import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,7 +74,10 @@ private data class RepoState(
     val pin: String,
     val biometrics: Boolean,
     val notifications: Boolean,
-    val cardFrozen: Boolean
+    val cardFrozen: Boolean,
+    val bankAccounts: List<BankAccount>,
+    val currency: String,
+    val transactions: List<Transaction>
 )
 
 private data class LocalUiState(
@@ -98,6 +106,35 @@ class ProfileViewModel(
     private val scope: CoroutineScope = coroutineScope ?: viewModelScope
     private val _localState = MutableStateFlow(LocalUiState())
 
+    private fun calculateDailyUsed(transactions: List<Transaction>): Long {
+        val startOfDayMillis = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        return transactions.filter {
+            it.status == TransactionStatus.COMPLETED &&
+            it.timestamp >= startOfDayMillis &&
+            (it.type == TransactionType.SEND ||
+             it.type == TransactionType.WITHDRAW ||
+             it.type == TransactionType.QR_PAYMENT ||
+             it.type == TransactionType.BILL_PAYMENT)
+        }.sumOf { it.amount + it.fee }
+    }
+
+    private fun mapBankAccounts(accounts: List<BankAccount>): List<LinkedBank> {
+        return accounts.map {
+            LinkedBank(
+                id = it.accountId,
+                bankName = it.bankName,
+                accountNumberMasked = it.accountNumberMasked,
+                isPrimary = it.isPrimary
+            )
+        }
+    }
+
     private val userAndWalletFlow = combine(
         repository.currentUser,
         repository.currentWallet,
@@ -114,17 +151,29 @@ class ProfileViewModel(
         Triple(biometrics, notifications, cardFrozen)
     }
 
+    private val accountsAndTxFlow = combine(
+        repository.bankAccounts,
+        repository.selectedCurrency,
+        repository.transactions
+    ) { banks, currency, txs ->
+        Triple(banks, currency, txs)
+    }
+
     private val repoFlow = combine(
         userAndWalletFlow,
-        settingsFlow
-    ) { (user, wallet, pin), (biometrics, notifications, cardFrozen) ->
-        RepoState(user, wallet, pin, biometrics, notifications, cardFrozen)
+        settingsFlow,
+        accountsAndTxFlow
+    ) { (user, wallet, pin), (biometrics, notifications, cardFrozen), (banks, currency, txs) ->
+        RepoState(user, wallet, pin, biometrics, notifications, cardFrozen, banks, currency, txs)
     }
 
     val uiState: StateFlow<ProfileUiState> = combine(
         repoFlow,
         _localState
     ) { repo, local ->
+        val mappedBanks = mapBankAccounts(repo.bankAccounts)
+        val dailyUsed = calculateDailyUsed(repo.transactions)
+
         ProfileUiState(
             user = repo.user,
             wallet = repo.wallet,
@@ -133,7 +182,9 @@ class ProfileViewModel(
             isNotificationsEnabled = repo.notifications,
             isCardFrozen = repo.cardFrozen,
             isCardDetailsRevealed = local.isCardDetailsRevealed,
-            selectedCurrency = local.selectedCurrency,
+            selectedCurrency = repo.currency,
+            dailyUsedCents = dailyUsed,
+            linkedBankAccounts = mappedBanks,
             showEditProfileDialog = local.showEditProfileDialog,
             editNameInput = local.editNameInput,
             editEmailInput = local.editEmailInput,
@@ -157,7 +208,10 @@ class ProfileViewModel(
             currentPin = repository.currentPin.value,
             isBiometricsEnabled = repository.isBiometricsEnabled.value,
             isNotificationsEnabled = repository.isNotificationsEnabled.value,
-            isCardFrozen = repository.isCardFrozen.value
+            isCardFrozen = repository.isCardFrozen.value,
+            selectedCurrency = repository.selectedCurrency.value,
+            dailyUsedCents = calculateDailyUsed(repository.transactions.value),
+            linkedBankAccounts = mapBankAccounts(repository.bankAccounts.value)
         )
     )
 
@@ -399,6 +453,7 @@ class ProfileViewModel(
     }
 
     fun setCurrency(currency: String) {
+        repository.setCurrency(currency)
         _localState.update {
             it.copy(
                 selectedCurrency = currency,

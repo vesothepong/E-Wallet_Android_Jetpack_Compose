@@ -9,20 +9,36 @@ import java.util.Locale
 
 object Formatters {
 
-    fun formatCentsToCurrency(amountInCents: Long, currency: String = "USD"): String {
+    @Volatile
+    var defaultCurrency: String = "USD"
+
+    fun formatCentsToCurrency(amountInCents: Long, currency: String = defaultCurrency): String {
         val dollars = amountInCents / 100.0
-        val formatter = NumberFormat.getCurrencyInstance(Locale.US)
-        val formatted = formatter.format(dollars)
-        return if (currency == "USD") {
-            formatted
-        } else {
-            "$formatted $currency"
+        return when (currency.uppercase()) {
+            "EUR" -> {
+                val formatter = NumberFormat.getCurrencyInstance(Locale.GERMANY)
+                formatter.currency = java.util.Currency.getInstance("EUR")
+                formatter.format(dollars)
+            }
+            "GBP" -> {
+                val formatter = NumberFormat.getCurrencyInstance(Locale.UK)
+                formatter.currency = java.util.Currency.getInstance("GBP")
+                formatter.format(dollars)
+            }
+            "KHR" -> {
+                val formatter = NumberFormat.getNumberInstance(Locale.US)
+                "៛ ${formatter.format(dollars)}"
+            }
+            else -> {
+                val formatter = NumberFormat.getCurrencyInstance(Locale.US)
+                formatter.format(dollars)
+            }
         }
     }
 
-    fun formatSignedAmount(amountInCents: Long, type: TransactionType): String {
+    fun formatSignedAmount(amountInCents: Long, type: TransactionType, currency: String = defaultCurrency): String {
         val absCents = kotlin.math.abs(amountInCents)
-        val formatted = formatCentsToCurrency(absCents)
+        val formatted = formatCentsToCurrency(absCents, currency)
         return when (type) {
             TransactionType.RECEIVE, TransactionType.DEPOSIT, TransactionType.SAVINGS_WITHDRAWAL -> "+$formatted"
             TransactionType.SEND, TransactionType.WITHDRAW, TransactionType.QR_PAYMENT, TransactionType.BILL_PAYMENT, TransactionType.SAVINGS_DEPOSIT -> "-$formatted"

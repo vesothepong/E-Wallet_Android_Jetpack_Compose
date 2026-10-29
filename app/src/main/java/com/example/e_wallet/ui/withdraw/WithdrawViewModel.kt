@@ -89,6 +89,19 @@ class WithdrawViewModel(
                 }
             }
         }
+
+        scope.launch {
+            repository.bankAccounts.collect { accounts ->
+                _uiState.update { current ->
+                    val dynamicDestinations = listOf("ATM Cashout (Cardless Demo)") +
+                        accounts.map { "${it.bankName} (${it.accountNumberMasked})" }
+                    current.copy(
+                        destinations = dynamicDestinations,
+                        destinationName = if (current.destinationName in dynamicDestinations) current.destinationName else dynamicDestinations.first()
+                    )
+                }
+            }
+        }
     }
 
     fun onAmountChanged(amount: String) {
@@ -262,8 +275,13 @@ class WithdrawViewModel(
     }
 
     fun reset() {
+        val accounts = repository.bankAccounts.value
+        val dynamicDestinations = listOf("ATM Cashout (Cardless Demo)") +
+            accounts.map { "${it.bankName} (${it.accountNumberMasked})" }
         _uiState.value = WithdrawUiState(
-            availableBalanceCents = repository.currentWallet.value.availableBalance
+            availableBalanceCents = repository.currentWallet.value.availableBalance,
+            destinations = dynamicDestinations,
+            destinationName = dynamicDestinations.first()
         )
     }
 }

@@ -2,11 +2,17 @@ package com.example.e_wallet
 
 import com.example.e_wallet.data.InMemoryWalletRepository
 import com.example.e_wallet.data.PinChangeResult
+import com.example.e_wallet.data.QrPaymentResult
+import com.example.e_wallet.data.SendResult
+import com.example.e_wallet.data.WithdrawResult
+import com.example.e_wallet.model.BankAccount
 import com.example.e_wallet.ui.profile.ChangePinStep
 import com.example.e_wallet.ui.profile.ProfileViewModel
+import com.example.e_wallet.util.Formatters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -198,5 +204,92 @@ class ProfileBusinessLogicTest {
         assertEquals("1234", repository.currentPin.value)
         assertFalse(repository.isCardFrozen.value)
         assertTrue(repository.isBiometricsEnabled.value)
+    }
+
+    @Test
+    fun testProfileDynamicallyObservesBankAccountsFromRepository() {
+        val initialAccountsCount = profileViewModel.uiState.value.linkedBankAccounts.size
+        assertEquals(2, initialAccountsCount)
+
+        // Add third bank account in repository
+        val newAccount = BankAccount(
+            accountId = "bnk_003",
+            bankName = "Citibank Global Wealth",
+            accountType = "Checking",
+            accountNumberMasked = "•••• 7712",
+            routingNumberMasked = "•••• 1109",
+            isPrimary = false,
+            balanceCents = 5000000L
+        )
+        repository.addBankAccount(newAccount)
+
+        val updatedAccounts = profileViewModel.uiState.value.linkedBankAccounts
+        assertEquals(3, updatedAccounts.size)
+        assertTrue(updatedAccounts.any { it.bankName == "Citibank Global Wealth" && it.accountNumberMasked == "•••• 7712" })
+    }
+
+    @Test
+    fun testCurrencyPropagationToRepositoryAndFormatters() {
+        profileViewModel.setCurrency("EUR")
+        assertEquals("EUR", repository.selectedCurrency.value)
+        assertEquals("EUR", Formatters.defaultCurrency)
+        val formattedEur = Formatters.formatCentsToCurrency(2500L)
+        assertTrue(formattedEur.contains("€") || formattedEur.contains("EUR"))
+
+        profileViewModel.setCurrency("GBP")
+        assertEquals("GBP", repository.selectedCurrency.value)
+        assertEquals("GBP", Formatters.defaultCurrency)
+        val formattedGbp = Formatters.formatCentsToCurrency(5000L)
+        assertTrue(formattedGbp.contains("£") || formattedGbp.contains("GBP"))
+
+        // Reset restores USD
+        profileViewModel.resetDemoData()
+        assertEquals("USD", repository.selectedCurrency.value)
+        assertEquals("USD", Formatters.defaultCurrency)
+    }
+
+    @Test
+    fun testGlobalCardFreezeBlocksTransfersWithdrawalsAndQr() = runBlocking {
+        // Freeze account card
+        repository.setCardFrozen(true)
+        assertTrue(repository.isCardFrozen.value)
+        assertTrue(profileViewModel.uiState.value.isCardFrozen)
+
+        // Attempt send money
+        val sendRes = repository.sendMoney(
+            receiverWalletNumber = "PKP-1049-5521",
+            receiverName = "Sarah Chen",
+            receiverId = "usr_demo_002",
+            amountCents = 1000L
+        )
+        assertTrue(sendRes is SendResult.Error)
+        assertTrue((sendRes as SendResult.Error).message.contains("frozen", ignoreCase = true))
+
+        // Attempt QR payment
+        val qrRes = repository.payQr(
+            receiverWalletNumber = "PKP-1049-5521",
+            receiverName = "Sarah Chen",
+            receiverId = "usr_demo_002",
+            amountCents = 1000L
+        )
+        assertTrue(qrRes is QrPaymentResult.Error)
+        assertTrue((qrRes as QrPaymentResult.Error).message.contains("frozen", ignoreCase = true))
+
+        // Attempt Withdraw
+        val withdrawRes = repository.withdraw(amountCents = 1000L)
+        assertTrue(withdrawRes is WithdrawResult.Error)
+        assertTrue((withdrawRes as WithdrawResult.Error).message.contains("frozen", ignoreCase = true))
+
+        // Unfreeze card
+        repository.setCardFrozen(false)
+        assertFalse(repository.isCardFrozen.value)
+
+        val unfreezeSendRes = repository.sendMoney(
+            receiverWalletNumber = "PKP-1049-5521",
+            receiverName = "Sarah Chen",
+            receiverId = "usr_demo_002",
+            amountCents = 1000L
+        )
+        assertTrue(unfreezeSendRes is SendResult.Success)
     }
 }

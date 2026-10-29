@@ -5,6 +5,7 @@ import com.example.e_wallet.data.QrPaymentResult
 import com.example.e_wallet.model.TransactionStatus
 import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.ui.home.HomeViewModel
+import com.example.e_wallet.ui.receive.QrCodeGenerator
 import com.example.e_wallet.ui.scan.QrCodeParser
 import com.example.e_wallet.ui.scan.ScanQrStep
 import com.example.e_wallet.ui.scan.ScanQrViewModel
@@ -225,5 +226,65 @@ class ScanQrSimulationTest {
         scanQrViewModel.onQuickAmountSelected(50)
         assertEquals(5000L, scanQrViewModel.uiState.value.amountCents)
         assertEquals("50", scanQrViewModel.uiState.value.amountInput)
+    }
+
+    @Test
+    fun testTorchAndCameraToggleState() {
+        assertFalse(scanQrViewModel.uiState.value.isTorchOn)
+        assertFalse(scanQrViewModel.uiState.value.isFrontCamera)
+
+        scanQrViewModel.toggleTorch()
+        assertTrue(scanQrViewModel.uiState.value.isTorchOn)
+
+        scanQrViewModel.toggleCamera()
+        assertTrue(scanQrViewModel.uiState.value.isFrontCamera)
+
+        scanQrViewModel.toggleTorch()
+        assertFalse(scanQrViewModel.uiState.value.isTorchOn)
+
+        scanQrViewModel.toggleCamera()
+        assertFalse(scanQrViewModel.uiState.value.isFrontCamera)
+    }
+
+    @Test
+    fun testEndToEndReceiveQrToScanQrPaymentFlow() = runBlocking {
+        val initialBalance = repository.currentWallet.value.availableBalance
+
+        // 1. Generate real standard QR BitMatrix payload as created by Receive feature
+        val receiverPayload = "pocketpay://receive?wallet=PKP-1049-5521&name=Sarah%20Chen&amount=3500"
+        val bitMatrix = QrCodeGenerator.generateBitMatrix(receiverPayload, size = 512, margin = 2)
+        assertNotNull(bitMatrix)
+
+        // 2. Decode the QR Matrix simulating CameraX/MLKit optical decode
+        val decodedPayload = QrCodeGenerator.decodeBitMatrix(bitMatrix)
+        assertEquals(receiverPayload, decodedPayload)
+
+        // 3. Scan the decoded payload in ScanQrViewModel
+        scanQrViewModel.onScanResult(decodedPayload!!)
+        val paymentState = scanQrViewModel.uiState.value
+
+        assertEquals(ScanQrStep.PAYMENT_DETAILS, paymentState.step)
+        assertEquals("Sarah Chen", paymentState.scannedQr?.receiverName)
+        assertEquals("PKP-1049-5521", paymentState.scannedQr?.receiverWalletNumber)
+        assertEquals(3500L, paymentState.amountCents)
+        assertTrue(paymentState.isAmountLocked)
+
+        // 4. Authenticate with PIN
+        scanQrViewModel.proceedToPin()
+        assertEquals(ScanQrStep.PIN_VERIFICATION, scanQrViewModel.uiState.value.step)
+
+        scanQrViewModel.onPinDigit("1")
+        scanQrViewModel.onPinDigit("2")
+        scanQrViewModel.onPinDigit("3")
+        scanQrViewModel.onPinDigit("4")
+
+        kotlinx.coroutines.delay(1000)
+
+        // 5. Verify transaction completed and debited atomically
+        val finalState = scanQrViewModel.uiState.value
+        assertEquals(ScanQrStep.SUCCESS, finalState.step)
+        assertEquals(initialBalance - 3500L, repository.currentWallet.value.availableBalance)
+        assertEquals(3500L, finalState.completedTransaction?.amount)
+        assertEquals("Sarah Chen", finalState.completedTransaction?.receiverName)
     }
 }

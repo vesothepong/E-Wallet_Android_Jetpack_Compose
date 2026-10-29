@@ -136,6 +136,7 @@ fun ScanQrBottomSheet(
                         isFrontCamera = uiState.isFrontCamera,
                         onToggleTorch = viewModel::toggleTorch,
                         onToggleCamera = viewModel::toggleCamera,
+                        onQrScanned = viewModel::onScanResult,
                         onSelectPreset = viewModel::onSelectPreset,
                         onOpenManualInput = { viewModel.toggleManualInputDialog(true) }
                     )
@@ -202,6 +203,7 @@ private fun ScannerView(
     isFrontCamera: Boolean,
     onToggleTorch: () -> Unit,
     onToggleCamera: () -> Unit,
+    onQrScanned: (String) -> Unit,
     onSelectPreset: (DemoQrPreset) -> Unit,
     onOpenManualInput: () -> Unit
 ) {
@@ -247,113 +249,14 @@ private fun ScannerView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Simulated Viewfinder Frame
-        Box(
-            modifier = Modifier
-                .size(260.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF0F172A)),
-            contentAlignment = Alignment.Center
-        ) {
-            // Viewfinder laser scan animation
-            val transition = rememberInfiniteTransition(label = "laser_transition")
-            val laserY by transition.animateFloat(
-                initialValue = 0f,
-                targetValue = 240f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "laser_animation"
-            )
-
-            // Neon Corner brackets
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokeWidth = 5.dp.toPx()
-                val cornerLength = 32.dp.toPx()
-                val color = Color(0xFF38BDF8)
-
-                // Top-Left
-                drawLine(color, Offset(24f, 24f), Offset(24f + cornerLength, 24f), strokeWidth, StrokeCap.Round)
-                drawLine(color, Offset(24f, 24f), Offset(24f, 24f + cornerLength), strokeWidth, StrokeCap.Round)
-
-                // Top-Right
-                drawLine(color, Offset(size.width - 24f, 24f), Offset(size.width - 24f - cornerLength, 24f), strokeWidth, StrokeCap.Round)
-                drawLine(color, Offset(size.width - 24f, 24f), Offset(size.width - 24f, 24f + cornerLength), strokeWidth, StrokeCap.Round)
-
-                // Bottom-Left
-                drawLine(color, Offset(24f, size.height - 24f), Offset(24f + cornerLength, size.height - 24f), strokeWidth, StrokeCap.Round)
-                drawLine(color, Offset(24f, size.height - 24f), Offset(24f, size.height - 24f - cornerLength), strokeWidth, StrokeCap.Round)
-
-                // Bottom-Right
-                drawLine(color, Offset(size.width - 24f, size.height - 24f), Offset(size.width - 24f - cornerLength, size.height - 24f), strokeWidth, StrokeCap.Round)
-                drawLine(color, Offset(size.width - 24f, size.height - 24f), Offset(size.width - 24f, size.height - 24f - cornerLength), strokeWidth, StrokeCap.Round)
-            }
-
-            // Watermark QR Icon in center
-            Icon(
-                imageVector = PocketPayIcons.QrCode,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.15f),
-                modifier = Modifier.size(100.dp)
-            )
-
-            // Animated Laser Line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.5.dp)
-                    .offset { IntOffset(x = 0, y = (laserY.dp - 120.dp).roundToPx()) }
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color(0xFF38BDF8),
-                                Color(0xFF00E5FF),
-                                Color(0xFF38BDF8),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
-            // Camera Overlay Controls (Flashlight & Camera Flip)
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.dp)
-                    .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Torch Button
-                IconButton(
-                    onClick = onToggleTorch,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isTorchOn) PocketPayIcons.FlashOn else PocketPayIcons.FlashOff,
-                        contentDescription = "Torch",
-                        tint = if (isTorchOn) WarningAmber else Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                // Camera Flip Button
-                IconButton(
-                    onClick = onToggleCamera,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = PocketPayIcons.FlipCamera,
-                        contentDescription = "Flip Camera",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
+        // Hardware CameraX + Google ML Kit Live Viewfinder
+        CameraQrScannerView(
+            isTorchOn = isTorchOn,
+            isFrontCamera = isFrontCamera,
+            onToggleTorch = onToggleTorch,
+            onToggleCamera = onToggleCamera,
+            onQrScanned = onQrScanned
+        )
 
         Spacer(modifier = Modifier.height(18.dp))
 

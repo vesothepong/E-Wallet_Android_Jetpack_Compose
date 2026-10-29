@@ -6,7 +6,9 @@ enum class TransactionType {
     DEPOSIT,
     WITHDRAW,
     QR_PAYMENT,
-    BILL_PAYMENT
+    BILL_PAYMENT,
+    SAVINGS_DEPOSIT,
+    SAVINGS_WITHDRAWAL
 }
 
 enum class TransactionStatus {

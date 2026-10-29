@@ -87,6 +87,12 @@ fun TransactionDetailSheet(
                 TransactionType.BILL_PAYMENT -> Triple(
                     PocketPayIcons.Receipt, WarningAmber, WarningAmber.copy(alpha = 0.12f)
                 )
+                TransactionType.SAVINGS_DEPOSIT -> Triple(
+                    PocketPayIcons.Savings, PrimaryBlue, PrimaryBlue.copy(alpha = 0.12f)
+                )
+                TransactionType.SAVINGS_WITHDRAWAL -> Triple(
+                    PocketPayIcons.Savings, SuccessGreen, SuccessGreen.copy(alpha = 0.12f)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -164,6 +170,8 @@ fun TransactionDetailSheet(
                             TransactionType.WITHDRAW -> "ATM Cash Withdrawal"
                             TransactionType.QR_PAYMENT -> "QR Merchant Payment"
                             TransactionType.BILL_PAYMENT -> "Bill Payment to ${transaction.receiverName ?: "Biller"}"
+                            TransactionType.SAVINGS_DEPOSIT -> "Saved to ${transaction.receiverName ?: "Goal Vault"}"
+                            TransactionType.SAVINGS_WITHDRAWAL -> "Transferred from ${transaction.senderName ?: "Goal Vault"}"
                         }
                     }
                     DetailRow(label = "Description", value = title)

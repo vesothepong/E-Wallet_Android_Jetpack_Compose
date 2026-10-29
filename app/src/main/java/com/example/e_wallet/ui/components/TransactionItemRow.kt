@@ -72,6 +72,16 @@ fun TransactionItemRow(
             WarningAmber,
             WarningAmber.copy(alpha = 0.12f)
         )
+        TransactionType.SAVINGS_DEPOSIT -> Triple(
+            PocketPayIcons.Savings,
+            PrimaryBlue,
+            PrimaryBlue.copy(alpha = 0.12f)
+        )
+        TransactionType.SAVINGS_WITHDRAWAL -> Triple(
+            PocketPayIcons.Savings,
+            SuccessGreen,
+            SuccessGreen.copy(alpha = 0.12f)
+        )
     }
 
     val displayTitle = when {
@@ -82,6 +92,8 @@ fun TransactionItemRow(
         transaction.type == TransactionType.WITHDRAW -> "ATM Cash Withdrawal"
         transaction.type == TransactionType.QR_PAYMENT -> "QR Merchant Payment"
         transaction.type == TransactionType.BILL_PAYMENT -> "Bill Payment to ${transaction.receiverName ?: "Biller"}"
+        transaction.type == TransactionType.SAVINGS_DEPOSIT -> "Saved to ${transaction.receiverName ?: "Goal Vault"}"
+        transaction.type == TransactionType.SAVINGS_WITHDRAWAL -> "Transferred from ${transaction.senderName ?: "Goal Vault"}"
         else -> "Transaction"
     }
 

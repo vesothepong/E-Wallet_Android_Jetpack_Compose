@@ -36,6 +36,7 @@ import com.example.e_wallet.ui.components.PocketPayBottomBar
 import com.example.e_wallet.ui.components.QuickActionsSection
 import com.example.e_wallet.ui.components.RecentBeneficiariesRow
 import com.example.e_wallet.ui.components.RecentTransactionsSection
+import com.example.e_wallet.ui.components.SavingsGoalsSection
 import com.example.e_wallet.ui.components.ServicesSection
 import com.example.e_wallet.ui.components.WalletCard
 import com.example.e_wallet.ui.deposit.DepositBottomSheet
@@ -53,7 +54,8 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToBills: () -> Unit = {}
+    onNavigateToBills: () -> Unit = {},
+    onNavigateToSavings: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -139,6 +141,7 @@ fun HomeScreen(
                 showBillPaymentSheet = true
             },
             onServicesSeeAllClick = onNavigateToBills,
+            onNavigateToSavings = onNavigateToSavings,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = onNavigateToHistory,
             modifier = Modifier.padding(innerPadding)
@@ -222,6 +225,7 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier,
     onCategoryClick: (BillCategory?) -> Unit = {},
     onServicesSeeAllClick: () -> Unit = {},
+    onNavigateToSavings: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onWalletClick: () -> Unit = {}
 ) {
@@ -268,7 +272,14 @@ fun HomeScreenContent(
             onSeeAllClick = onServicesSeeAllClick
         )
 
-        // 6. Financial Overview: Derived Dashboard KPIs
+        // 6. Savings Goals & Vaults Carousel
+        SavingsGoalsSection(
+            goals = uiState.savingsGoals,
+            onSeeAllClick = onNavigateToSavings,
+            onGoalClick = { onNavigateToSavings() }
+        )
+
+        // 7. Financial Overview: Derived Dashboard KPIs
         DashboardStatsSection(
             totalReceivedCents = uiState.totalReceivedCents,
             totalSentCents = uiState.totalSentCents,

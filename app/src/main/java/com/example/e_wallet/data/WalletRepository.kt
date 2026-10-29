@@ -11,6 +11,9 @@ import com.example.e_wallet.model.CardType
 import com.example.e_wallet.model.NotificationItem
 import com.example.e_wallet.model.NotificationType
 import com.example.e_wallet.model.PaymentCard
+import com.example.e_wallet.model.SavingsCategory
+import com.example.e_wallet.model.SavingsGoal
+import com.example.e_wallet.model.SavingsGoalResult
 import com.example.e_wallet.model.Transaction
 import com.example.e_wallet.model.TransactionStatus
 import com.example.e_wallet.model.TransactionType
@@ -62,6 +65,8 @@ interface WalletRepository {
     val bankAccounts: StateFlow<List<BankAccount>>
     val notifications: StateFlow<List<NotificationItem>>
     val billers: StateFlow<List<Biller>>
+    val savingsGoals: StateFlow<List<SavingsGoal>>
+    val totalSavingsCents: StateFlow<Long>
     val isAuthenticated: StateFlow<Boolean>
     val isOnboardingCompleted: StateFlow<Boolean>
 
@@ -111,6 +116,42 @@ interface WalletRepository {
         feeCents: Long = 0L,
         note: String = ""
     ): BillPaymentResult
+
+    suspend fun createSavingsGoal(
+        name: String,
+        targetAmountCents: Long,
+        initialDepositCents: Long = 0L,
+        category: SavingsCategory = SavingsCategory.GENERAL,
+        targetDateMillis: Long? = null,
+        isLocked: Boolean = false,
+        note: String = ""
+    ): SavingsGoalResult
+
+    suspend fun depositToGoal(
+        goalId: String,
+        amountCents: Long,
+        note: String = ""
+    ): SavingsGoalResult
+
+    suspend fun withdrawFromGoal(
+        goalId: String,
+        amountCents: Long,
+        pin: String,
+        note: String = ""
+    ): SavingsGoalResult
+
+    suspend fun deleteSavingsGoal(
+        goalId: String,
+        pin: String
+    ): SavingsGoalResult
+
+    fun updateSavingsGoal(
+        goalId: String,
+        name: String,
+        targetAmountCents: Long,
+        targetDateMillis: Long?,
+        isLocked: Boolean
+    ): Boolean
 
     fun searchReceivers(query: String): List<Beneficiary>
 
@@ -546,6 +587,53 @@ class InMemoryWalletRepository : WalletRepository {
     private val _billers = MutableStateFlow(defaultBillers)
     override val billers: StateFlow<List<Biller>> = _billers.asStateFlow()
 
+    private val defaultSavingsGoals = listOf(
+        SavingsGoal(
+            id = "goal_001",
+            name = "Emergency Safety Net",
+            targetAmountCents = 500000L, // $5,000.00
+            currentAmountCents = 240000L, // $2,400.00 (48%)
+            category = SavingsCategory.EMERGENCY,
+            targetDateMillis = System.currentTimeMillis() + 180L * 24 * 3600 * 1000,
+            isLocked = true,
+            apyRatePercent = 4.50,
+            note = "6 months of living expenses buffer"
+        ),
+        SavingsGoal(
+            id = "goal_002",
+            name = "Tokyo Vacation",
+            targetAmountCents = 350000L, // $3,500.00
+            currentAmountCents = 175000L, // $1,750.00 (50%)
+            category = SavingsCategory.TRAVEL,
+            targetDateMillis = System.currentTimeMillis() + 90L * 24 * 3600 * 1000,
+            isLocked = false,
+            apyRatePercent = 4.50,
+            note = "Flights & hotel for autumn trip"
+        ),
+        SavingsGoal(
+            id = "goal_003",
+            name = "MacBook Pro M-Series",
+            targetAmountCents = 200000L, // $2,000.00
+            currentAmountCents = 160000L, // $1,600.00 (80%)
+            category = SavingsCategory.TECH,
+            targetDateMillis = System.currentTimeMillis() + 30L * 24 * 3600 * 1000,
+            isLocked = false,
+            apyRatePercent = 4.50,
+            note = "Upgrade developer workstation"
+        )
+    )
+
+    private val savingsMutex = Mutex()
+    private val _savingsGoals = MutableStateFlow(defaultSavingsGoals)
+    override val savingsGoals: StateFlow<List<SavingsGoal>> = _savingsGoals.asStateFlow()
+
+    private val _totalSavingsCents = MutableStateFlow(defaultSavingsGoals.sumOf { it.currentAmountCents })
+    override val totalSavingsCents: StateFlow<Long> = _totalSavingsCents.asStateFlow()
+
+    private fun refreshTotalSavings() {
+        _totalSavingsCents.value = _savingsGoals.value.sumOf { it.currentAmountCents }
+    }
+
     private val _unreadNotificationsCount = MutableStateFlow(3)
     override val unreadNotificationsCount: StateFlow<Int> = _unreadNotificationsCount.asStateFlow()
 
@@ -897,6 +985,289 @@ class InMemoryWalletRepository : WalletRepository {
         )
     }
 
+    override suspend fun createSavingsGoal(
+        name: String,
+        targetAmountCents: Long,
+        initialDepositCents: Long,
+        category: SavingsCategory,
+        targetDateMillis: Long?,
+        isLocked: Boolean,
+        note: String
+    ): SavingsGoalResult = savingsMutex.withLock {
+        val trimmedName = name.trim()
+        if (trimmedName.isBlank()) {
+            return@withLock SavingsGoalResult.Error("Please enter a goal name.")
+        }
+        if (targetAmountCents <= 0L) {
+            return@withLock SavingsGoalResult.Error("Target amount must be greater than zero.")
+        }
+        if (initialDepositCents < 0L) {
+            return@withLock SavingsGoalResult.Error("Initial deposit cannot be negative.")
+        }
+        if (initialDepositCents > 0L && initialDepositCents > _currentWallet.value.availableBalance) {
+            return@withLock SavingsGoalResult.Error("Insufficient balance for initial deposit.")
+        }
+
+        val goalId = "goal_${System.currentTimeMillis()}"
+        val newGoal = SavingsGoal(
+            id = goalId,
+            name = trimmedName,
+            targetAmountCents = targetAmountCents,
+            currentAmountCents = initialDepositCents,
+            category = category,
+            targetDateMillis = targetDateMillis,
+            isLocked = isLocked,
+            apyRatePercent = 4.50,
+            note = note.trim()
+        )
+
+        var newBalance = _currentWallet.value.currentBalance
+        if (initialDepositCents > 0L) {
+            newBalance = _currentWallet.value.currentBalance - initialDepositCents
+            val newAvailable = _currentWallet.value.availableBalance - initialDepositCents
+            _currentWallet.value = _currentWallet.value.copy(
+                currentBalance = newBalance,
+                availableBalance = newAvailable
+            )
+
+            val tx = Transaction(
+                transactionId = "tx_sav_${System.currentTimeMillis()}",
+                type = TransactionType.SAVINGS_DEPOSIT,
+                senderId = _currentUser.value.userId,
+                senderName = _currentUser.value.fullName,
+                receiverId = goalId,
+                receiverName = trimmedName,
+                amount = initialDepositCents,
+                timestamp = System.currentTimeMillis(),
+                description = "Initial deposit to $trimmedName",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-SAV-${System.currentTimeMillis().toString().takeLast(6)}"
+            )
+            _transactions.value = listOf(tx) + _transactions.value
+        }
+
+        _savingsGoals.value = listOf(newGoal) + _savingsGoals.value
+        refreshTotalSavings()
+
+        addNotification(
+            title = "New Savings Goal Created",
+            message = "Created '$trimmedName' with target ${Formatters.formatCentsToCurrency(targetAmountCents)}.",
+            type = NotificationType.TRANSACTION,
+            amountCents = if (initialDepositCents > 0L) initialDepositCents else null
+        )
+
+        return@withLock SavingsGoalResult.Success(
+            goal = newGoal,
+            updatedWalletBalance = newBalance,
+            message = "Savings vault '$trimmedName' created successfully."
+        )
+    }
+
+    override suspend fun depositToGoal(
+        goalId: String,
+        amountCents: Long,
+        note: String
+    ): SavingsGoalResult = savingsMutex.withLock {
+        if (amountCents <= 0L) {
+            return@withLock SavingsGoalResult.Error("Deposit amount must be greater than zero.")
+        }
+        val currentWlt = _currentWallet.value
+        if (amountCents > currentWlt.availableBalance) {
+            return@withLock SavingsGoalResult.Error("Insufficient balance in your wallet.")
+        }
+        val goalIndex = _savingsGoals.value.indexOfFirst { it.id == goalId }
+        if (goalIndex == -1) {
+            return@withLock SavingsGoalResult.Error("Savings goal not found.")
+        }
+        val targetGoal = _savingsGoals.value[goalIndex]
+        val updatedGoal = targetGoal.copy(
+            currentAmountCents = targetGoal.currentAmountCents + amountCents
+        )
+
+        val newBalance = currentWlt.currentBalance - amountCents
+        val newAvailable = currentWlt.availableBalance - amountCents
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+
+        val updatedGoals = _savingsGoals.value.toMutableList()
+        updatedGoals[goalIndex] = updatedGoal
+        _savingsGoals.value = updatedGoals
+        refreshTotalSavings()
+
+        val tx = Transaction(
+            transactionId = "tx_sav_${System.currentTimeMillis()}",
+            type = TransactionType.SAVINGS_DEPOSIT,
+            senderId = _currentUser.value.userId,
+            senderName = _currentUser.value.fullName,
+            receiverId = goalId,
+            receiverName = targetGoal.name,
+            amount = amountCents,
+            timestamp = System.currentTimeMillis(),
+            description = note.ifBlank { "Saved to ${targetGoal.name}" },
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = "REF-SAV-${System.currentTimeMillis().toString().takeLast(6)}"
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        addNotification(
+            title = "Goal Top-Up Successful",
+            message = "Saved ${Formatters.formatCentsToCurrency(amountCents)} into ${targetGoal.name}.",
+            type = NotificationType.TRANSACTION,
+            amountCents = amountCents
+        )
+
+        return@withLock SavingsGoalResult.Success(
+            goal = updatedGoal,
+            updatedWalletBalance = newBalance,
+            message = "Successfully deposited ${Formatters.formatCentsToCurrency(amountCents)}."
+        )
+    }
+
+    override suspend fun withdrawFromGoal(
+        goalId: String,
+        amountCents: Long,
+        pin: String,
+        note: String
+    ): SavingsGoalResult = savingsMutex.withLock {
+        if (!verifyPin(pin)) {
+            return@withLock SavingsGoalResult.Error("Incorrect PIN entered. Transaction rejected.")
+        }
+        if (amountCents <= 0L) {
+            return@withLock SavingsGoalResult.Error("Withdrawal amount must be greater than zero.")
+        }
+        val goalIndex = _savingsGoals.value.indexOfFirst { it.id == goalId }
+        if (goalIndex == -1) {
+            return@withLock SavingsGoalResult.Error("Savings goal not found.")
+        }
+        val targetGoal = _savingsGoals.value[goalIndex]
+        if (amountCents > targetGoal.currentAmountCents) {
+            return@withLock SavingsGoalResult.Error("Amount exceeds available balance in this vault.")
+        }
+        if (targetGoal.isLocked && targetGoal.currentAmountCents < targetGoal.targetAmountCents) {
+            return@withLock SavingsGoalResult.Error("This vault is locked until the target amount is reached.")
+        }
+
+        val updatedGoal = targetGoal.copy(
+            currentAmountCents = targetGoal.currentAmountCents - amountCents
+        )
+
+        val currentWlt = _currentWallet.value
+        val newBalance = currentWlt.currentBalance + amountCents
+        val newAvailable = currentWlt.availableBalance + amountCents
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+
+        val updatedGoals = _savingsGoals.value.toMutableList()
+        updatedGoals[goalIndex] = updatedGoal
+        _savingsGoals.value = updatedGoals
+        refreshTotalSavings()
+
+        val tx = Transaction(
+            transactionId = "tx_sav_${System.currentTimeMillis()}",
+            type = TransactionType.SAVINGS_WITHDRAWAL,
+            senderId = goalId,
+            senderName = targetGoal.name,
+            receiverId = _currentUser.value.userId,
+            receiverName = _currentUser.value.fullName,
+            amount = amountCents,
+            timestamp = System.currentTimeMillis(),
+            description = note.ifBlank { "Cashout from ${targetGoal.name}" },
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = "REF-WTH-SAV-${System.currentTimeMillis().toString().takeLast(6)}"
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        addNotification(
+            title = "Savings Cashout",
+            message = "Transferred ${Formatters.formatCentsToCurrency(amountCents)} from ${targetGoal.name} back to your wallet.",
+            type = NotificationType.TRANSACTION,
+            amountCents = amountCents
+        )
+
+        return@withLock SavingsGoalResult.Success(
+            goal = updatedGoal,
+            updatedWalletBalance = newBalance,
+            message = "Transferred ${Formatters.formatCentsToCurrency(amountCents)} to your wallet."
+        )
+    }
+
+    override suspend fun deleteSavingsGoal(
+        goalId: String,
+        pin: String
+    ): SavingsGoalResult = savingsMutex.withLock {
+        if (!verifyPin(pin)) {
+            return@withLock SavingsGoalResult.Error("Incorrect PIN entered. Action rejected.")
+        }
+        val goal = _savingsGoals.value.firstOrNull { it.id == goalId }
+            ?: return@withLock SavingsGoalResult.Error("Savings goal not found.")
+
+        var newBalance = _currentWallet.value.currentBalance
+        if (goal.currentAmountCents > 0L) {
+            val refund = goal.currentAmountCents
+            newBalance = _currentWallet.value.currentBalance + refund
+            val newAvailable = _currentWallet.value.availableBalance + refund
+            _currentWallet.value = _currentWallet.value.copy(
+                currentBalance = newBalance,
+                availableBalance = newAvailable
+            )
+
+            val tx = Transaction(
+                transactionId = "tx_sav_del_${System.currentTimeMillis()}",
+                type = TransactionType.SAVINGS_WITHDRAWAL,
+                senderId = goalId,
+                senderName = goal.name,
+                receiverId = _currentUser.value.userId,
+                receiverName = _currentUser.value.fullName,
+                amount = refund,
+                timestamp = System.currentTimeMillis(),
+                description = "Closed goal: ${goal.name} (Balance Refund)",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-REFUND-${System.currentTimeMillis().toString().takeLast(6)}"
+            )
+            _transactions.value = listOf(tx) + _transactions.value
+        }
+
+        _savingsGoals.value = _savingsGoals.value.filterNot { it.id == goalId }
+        refreshTotalSavings()
+
+        addNotification(
+            title = "Savings Goal Closed",
+            message = "Goal '${goal.name}' was closed and funds refunded to your wallet.",
+            type = NotificationType.TRANSACTION
+        )
+
+        return@withLock SavingsGoalResult.Success(
+            goal = goal,
+            updatedWalletBalance = newBalance,
+            message = "Savings goal '${goal.name}' closed."
+        )
+    }
+
+    override fun updateSavingsGoal(
+        goalId: String,
+        name: String,
+        targetAmountCents: Long,
+        targetDateMillis: Long?,
+        isLocked: Boolean
+    ): Boolean {
+        val list = _savingsGoals.value.toMutableList()
+        val index = list.indexOfFirst { it.id == goalId }
+        if (index == -1) return false
+        val existing = list[index]
+        list[index] = existing.copy(
+            name = name.ifBlank { existing.name },
+            targetAmountCents = if (targetAmountCents > 0L) targetAmountCents else existing.targetAmountCents,
+            targetDateMillis = targetDateMillis,
+            isLocked = isLocked
+        )
+        _savingsGoals.value = list
+        return true
+    }
+
     override fun searchReceivers(query: String): List<Beneficiary> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return _beneficiaries.value
@@ -1128,6 +1499,8 @@ class InMemoryWalletRepository : WalletRepository {
         _bankAccounts.value = defaultBankAccounts
         _notifications.value = generateDefaultNotifications()
         _billers.value = defaultBillers
+        _savingsGoals.value = defaultSavingsGoals
+        refreshTotalSavings()
         _unreadNotificationsCount.value = 3
         _currentPin.value = defaultPin
         _isBiometricsEnabled.value = true

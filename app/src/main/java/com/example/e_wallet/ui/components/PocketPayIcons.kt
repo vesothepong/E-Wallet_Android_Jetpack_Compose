@@ -1405,4 +1405,189 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val Savings: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Savings",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(19.83f, 7.5f)
+                lineTo(18.17f, 5.84f)
+                curveTo(17.78f, 5.45f, 17.25f, 5.25f, 16.71f, 5.29f)
+                lineTo(15f, 5.42f)
+                curveTo(14.07f, 4.54f, 12.87f, 4f, 11.53f, 4f)
+                curveTo(8.47f, 4f, 6f, 6.47f, 6f, 9.53f)
+                curveTo(6f, 9.87f, 6.03f, 10.21f, 6.09f, 10.53f)
+                lineTo(4f, 12.63f)
+                lineTo(4f, 16f)
+                lineTo(6f, 16f)
+                lineTo(6f, 19f)
+                lineTo(8f, 19f)
+                lineTo(8f, 16f)
+                lineTo(14f, 16f)
+                lineTo(14f, 19f)
+                lineTo(16f, 19f)
+                lineTo(16f, 16.89f)
+                curveTo(18.36f, 15.74f, 20f, 13.27f, 20f, 10.42f)
+                curveTo(20f, 9.4f, 19.94f, 8.44f, 19.83f, 7.5f)
+                close()
+                moveTo(13f, 9f)
+                lineTo(9f, 9f)
+                curveTo(8.45f, 9f, 8f, 8.55f, 8f, 8f)
+                curveTo(8f, 7.45f, 8.45f, 7f, 9f, 7f)
+                lineTo(13f, 7f)
+                curveTo(13.55f, 7f, 14f, 7.45f, 14f, 8f)
+                curveTo(14f, 8.55f, 13.55f, 9f, 13f, 9f)
+                close()
+            }
+        }.build()
+    }
+
+    val Flight: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Flight",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(21f, 16f)
+                lineTo(21f, 14f)
+                lineTo(13f, 9f)
+                lineTo(13f, 3.5f)
+                curveTo(13f, 2.67f, 12.33f, 2f, 11.5f, 2f)
+                curveTo(10.67f, 2f, 10f, 2.67f, 10f, 3.5f)
+                lineTo(10f, 9f)
+                lineTo(2f, 14f)
+                lineTo(2f, 16f)
+                lineTo(10f, 13.5f)
+                lineTo(10f, 19f)
+                lineTo(8f, 20.5f)
+                lineTo(8f, 22f)
+                lineTo(11.5f, 21f)
+                lineTo(15f, 22f)
+                lineTo(15f, 20.5f)
+                lineTo(13f, 19f)
+                lineTo(13f, 13.5f)
+                lineTo(21f, 16f)
+                close()
+            }
+        }.build()
+    }
+
+    val DirectionsCar: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "DirectionsCar",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(18.92f, 6.01f)
+                curveTo(18.72f, 5.42f, 18.16f, 5f, 17.5f, 5f)
+                lineTo(6.5f, 5f)
+                curveTo(5.84f, 5f, 5.28f, 5.42f, 5.08f, 6.01f)
+                lineTo(3f, 12f)
+                lineTo(3f, 20f)
+                curveTo(3f, 20.55f, 3.45f, 21f, 4f, 21f)
+                lineTo(5f, 21f)
+                curveTo(5.55f, 21f, 6f, 20.55f, 6f, 20f)
+                lineTo(6f, 19f)
+                lineTo(18f, 19f)
+                lineTo(18f, 20f)
+                curveTo(18f, 20.55f, 18.45f, 21f, 19f, 21f)
+                lineTo(20f, 21f)
+                curveTo(20.55f, 21f, 21f, 20.55f, 21f, 20f)
+                lineTo(21f, 12f)
+                lineTo(18.92f, 6.01f)
+                close()
+                moveTo(6.5f, 16f)
+                curveTo(5.67f, 16f, 5f, 15.33f, 5f, 14.5f)
+                curveTo(5f, 13.67f, 5.67f, 13f, 6.5f, 13f)
+                curveTo(7.33f, 13f, 8f, 13.67f, 8f, 14.5f)
+                curveTo(8f, 15.33f, 7.33f, 16f, 6.5f, 16f)
+                close()
+                moveTo(17.5f, 16f)
+                curveTo(16.67f, 16f, 16f, 15.33f, 16f, 14.5f)
+                curveTo(16f, 13.67f, 16.67f, 13f, 17.5f, 13f)
+                curveTo(18.33f, 13f, 19f, 13.67f, 19f, 14.5f)
+                curveTo(19f, 15.33f, 18.33f, 16f, 17.5f, 16f)
+                close()
+                moveTo(5f, 11f)
+                lineTo(6.5f, 6.5f)
+                lineTo(17.5f, 6.5f)
+                lineTo(19f, 11f)
+                lineTo(5f, 11f)
+                close()
+            }
+        }.build()
+    }
+
+    val TrendingUp: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "TrendingUp",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(16f, 6f)
+                lineTo(18.29f, 8.29f)
+                lineTo(13.41f, 13.17f)
+                lineTo(9.41f, 9.17f)
+                lineTo(2f, 16.59f)
+                lineTo(3.41f, 18f)
+                lineTo(9.41f, 12f)
+                lineTo(13.41f, 16f)
+                lineTo(19.71f, 9.71f)
+                lineTo(22f, 12f)
+                lineTo(22f, 6f)
+                close()
+            }
+        }.build()
+    }
+
+    val Event: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Event",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(19f, 4f)
+                lineTo(18f, 4f)
+                lineTo(18f, 2f)
+                lineTo(16f, 2f)
+                lineTo(16f, 4f)
+                lineTo(8f, 4f)
+                lineTo(8f, 2f)
+                lineTo(6f, 2f)
+                lineTo(6f, 4f)
+                lineTo(5f, 4f)
+                curveTo(3.89f, 4f, 3.01f, 4.9f, 3.01f, 6f)
+                lineTo(3f, 20f)
+                curveTo(3f, 21.1f, 3.89f, 22f, 5f, 22f)
+                lineTo(19f, 22f)
+                curveTo(20.1f, 22f, 21f, 21.1f, 21f, 20f)
+                lineTo(21f, 6f)
+                curveTo(21f, 4.9f, 20.1f, 4f, 19f, 4f)
+                close()
+                moveTo(19f, 20f)
+                lineTo(5f, 20f)
+                lineTo(5f, 9f)
+                lineTo(19f, 9f)
+                lineTo(19f, 20f)
+                close()
+            }
+        }.build()
+    }
 }

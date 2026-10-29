@@ -24,8 +24,8 @@ object Formatters {
         val absCents = kotlin.math.abs(amountInCents)
         val formatted = formatCentsToCurrency(absCents)
         return when (type) {
-            TransactionType.RECEIVE, TransactionType.DEPOSIT -> "+$formatted"
-            TransactionType.SEND, TransactionType.WITHDRAW, TransactionType.QR_PAYMENT, TransactionType.BILL_PAYMENT -> "-$formatted"
+            TransactionType.RECEIVE, TransactionType.DEPOSIT, TransactionType.SAVINGS_WITHDRAWAL -> "+$formatted"
+            TransactionType.SEND, TransactionType.WITHDRAW, TransactionType.QR_PAYMENT, TransactionType.BILL_PAYMENT, TransactionType.SAVINGS_DEPOSIT -> "-$formatted"
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.e_wallet.data.WalletRepository
 import com.example.e_wallet.data.WalletRepositoryProvider
 import com.example.e_wallet.model.Beneficiary
+import com.example.e_wallet.model.SavingsGoal
 import com.example.e_wallet.model.Transaction
 import com.example.e_wallet.model.TransactionStatus
 import com.example.e_wallet.model.TransactionType
@@ -43,6 +44,7 @@ data class HomeUiState(
     val recentTransactions: List<Transaction> = emptyList(),
     val filteredTransactions: List<Transaction> = emptyList(),
     val beneficiaries: List<Beneficiary> = emptyList(),
+    val savingsGoals: List<SavingsGoal> = emptyList(),
     val unreadNotificationsCount: Int = 0,
     val totalSentCents: Long = 0L,
     val totalReceivedCents: Long = 0L,
@@ -59,6 +61,7 @@ private data class RepoData(
     val wallet: Wallet,
     val transactions: List<Transaction>,
     val beneficiaries: List<Beneficiary>,
+    val savingsGoals: List<SavingsGoal>,
     val unreadCount: Int
 )
 
@@ -86,6 +89,7 @@ class HomeViewModel(
         wallet: Wallet,
         txs: List<Transaction>,
         beneficiaries: List<Beneficiary>,
+        savingsGoals: List<SavingsGoal>,
         unreadCount: Int,
         isBalVisible: Boolean,
         filter: TransactionFilter,
@@ -134,6 +138,7 @@ class HomeViewModel(
             recentTransactions = recentTxs,
             filteredTransactions = filtered,
             beneficiaries = beneficiaries,
+            savingsGoals = savingsGoals,
             unreadNotificationsCount = unreadCount,
             totalSentCents = totalSent,
             totalReceivedCents = totalReceived,
@@ -153,7 +158,11 @@ class HomeViewModel(
         repository.beneficiaries,
         repository.unreadNotificationsCount
     ) { user, wallet, txs, beneficiaries, unreadCount ->
-        RepoData(user, wallet, txs, beneficiaries, unreadCount)
+        Triple(Pair(user, wallet), Pair(txs, beneficiaries), unreadCount)
+    }.combine(repository.savingsGoals) { (uw, tb, unreadCount), goals ->
+        val (user, wallet) = uw
+        val (txs, beneficiaries) = tb
+        RepoData(user, wallet, txs, beneficiaries, goals, unreadCount)
     }
 
     private val uiControlsFlow = combine(
@@ -174,6 +183,7 @@ class HomeViewModel(
             wallet = repo.wallet,
             txs = repo.transactions,
             beneficiaries = repo.beneficiaries,
+            savingsGoals = repo.savingsGoals,
             unreadCount = repo.unreadCount,
             isBalVisible = ui.isBalanceVisible,
             filter = ui.selectedFilter,
@@ -188,6 +198,7 @@ class HomeViewModel(
             repository.currentWallet.value,
             repository.transactions.value,
             repository.beneficiaries.value,
+            repository.savingsGoals.value,
             repository.unreadNotificationsCount.value,
             _isBalanceVisible.value,
             _selectedFilter.value,

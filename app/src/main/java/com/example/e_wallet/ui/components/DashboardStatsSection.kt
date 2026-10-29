@@ -1,6 +1,7 @@
 package com.example.e_wallet.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,8 @@ fun DashboardStatsSection(
     totalWithdrawCents: Long,
     completedTransactionCount: Int,
     isBalanceVisible: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAnalyticsClick: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxWidth()
@@ -59,27 +61,33 @@ fun DashboardStatsSection(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = PrimaryBlue.copy(alpha = 0.12f)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = PrimaryBlue.copy(alpha = 0.12f),
+                    modifier = Modifier.clickable(onClick = onAnalyticsClick)
                 ) {
-                    Icon(
-                        imageVector = PocketPayIcons.CheckCircle,
-                        contentDescription = null,
-                        tint = PrimaryBlue,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "$completedTransactionCount Settled",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryBlue
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = PocketPayIcons.BarChart,
+                            contentDescription = null,
+                            tint = PrimaryBlue,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Analytics",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
+                    }
                 }
             }
         }
@@ -130,6 +138,49 @@ fun DashboardStatsSection(
                 isPositive = false,
                 modifier = Modifier.weight(1f)
             )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Quick shortcut banner to Spending & Budgets
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 1.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onAnalyticsClick)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = PocketPayIcons.PieChart,
+                        contentDescription = null,
+                        tint = PrimaryBlue,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Spending Breakdown & Category Budgets",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Icon(
+                    imageVector = PocketPayIcons.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }

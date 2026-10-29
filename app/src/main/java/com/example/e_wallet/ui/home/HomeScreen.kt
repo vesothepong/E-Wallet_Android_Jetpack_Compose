@@ -55,7 +55,8 @@ fun HomeScreen(
     onNavigateToWallet: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToBills: () -> Unit = {},
-    onNavigateToSavings: () -> Unit = {}
+    onNavigateToSavings: () -> Unit = {},
+    onNavigateToAnalytics: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -142,6 +143,7 @@ fun HomeScreen(
             },
             onServicesSeeAllClick = onNavigateToBills,
             onNavigateToSavings = onNavigateToSavings,
+            onNavigateToAnalytics = onNavigateToAnalytics,
             onTransactionClick = viewModel::onTransactionClicked,
             onSeeAllClick = onNavigateToHistory,
             modifier = Modifier.padding(innerPadding)
@@ -226,6 +228,7 @@ fun HomeScreenContent(
     onCategoryClick: (BillCategory?) -> Unit = {},
     onServicesSeeAllClick: () -> Unit = {},
     onNavigateToSavings: () -> Unit = {},
+    onNavigateToAnalytics: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onWalletClick: () -> Unit = {}
 ) {
@@ -286,7 +289,8 @@ fun HomeScreenContent(
             totalDepositCents = uiState.totalDepositCents,
             totalWithdrawCents = uiState.totalWithdrawCents,
             completedTransactionCount = uiState.completedTransactionCount,
-            isBalanceVisible = uiState.isBalanceVisible
+            isBalanceVisible = uiState.isBalanceVisible,
+            onAnalyticsClick = onNavigateToAnalytics
         )
 
         // 6. Quick Send: Favorite Beneficiaries

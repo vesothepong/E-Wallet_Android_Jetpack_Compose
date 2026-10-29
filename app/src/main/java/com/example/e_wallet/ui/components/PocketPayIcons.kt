@@ -1590,4 +1590,152 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val PieChart: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "PieChart",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(11f, 2f)
+                verticalLineTo(13f)
+                horizontalLineTo(2f)
+                curveTo(2f, 7.03f, 6.03f, 2f, 11f, 2f)
+                close()
+                moveTo(13f, 2f)
+                verticalLineTo(11f)
+                horizontalLineTo(22f)
+                curveTo(22f, 6.03f, 17.97f, 2f, 13f, 2f)
+                close()
+                moveTo(21.95f, 13f)
+                horizontalLineTo(13f)
+                verticalLineTo(21.95f)
+                curveTo(17.97f, 21.95f, 21.95f, 17.97f, 21.95f, 13f)
+                close()
+                moveTo(2f, 15f)
+                curveTo(2f, 18.87f, 5.13f, 22f, 9f, 22f)
+                curveTo(10.05f, 22f, 11.05f, 21.77f, 11.95f, 21.36f)
+                verticalLineTo(15f)
+                horizontalLineTo(2f)
+                close()
+            }
+        }.build()
+    }
+
+    val BarChart: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "BarChart",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(4f, 9f)
+                horizontalLineTo(8f)
+                verticalLineTo(20f)
+                horizontalLineTo(4f)
+                close()
+                moveTo(10f, 4f)
+                horizontalLineTo(14f)
+                verticalLineTo(20f)
+                horizontalLineTo(10f)
+                close()
+                moveTo(16f, 13f)
+                horizontalLineTo(20f)
+                verticalLineTo(20f)
+                horizontalLineTo(16f)
+                close()
+            }
+        }.build()
+    }
+
+    val Restaurant: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Restaurant",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(11f, 9f)
+                horizontalLineTo(9f)
+                verticalLineTo(2f)
+                horizontalLineTo(7f)
+                verticalLineTo(9f)
+                horizontalLineTo(5f)
+                verticalLineTo(2f)
+                horizontalLineTo(3f)
+                verticalLineTo(9f)
+                curveTo(3f, 11.21f, 4.79f, 13f, 7f, 13f)
+                verticalLineTo(21f)
+                horizontalLineTo(9f)
+                verticalLineTo(13f)
+                curveTo(11.21f, 13f, 13f, 11.21f, 13f, 9f)
+                verticalLineTo(2f)
+                horizontalLineTo(11f)
+                verticalLineTo(9f)
+                close()
+                moveTo(16f, 6f)
+                verticalLineTo(14f)
+                horizontalLineTo(18f)
+                verticalLineTo(21f)
+                horizontalLineTo(20f)
+                verticalLineTo(2f)
+                curveTo(17.79f, 2f, 16f, 3.79f, 16f, 6f)
+                close()
+            }
+        }.build()
+    }
+
+    val ShoppingCart: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "ShoppingCart",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(7f, 18f)
+                curveTo(5.9f, 18f, 5.01f, 18.9f, 5.01f, 20f)
+                curveTo(5.01f, 21.1f, 5.9f, 22f, 7f, 22f)
+                curveTo(8.1f, 22f, 9f, 21.1f, 9f, 20f)
+                curveTo(9f, 18.9f, 8.1f, 18f, 7f, 18f)
+                close()
+                moveTo(1f, 2f)
+                verticalLineTo(4f)
+                horizontalLineTo(3f)
+                lineTo(6.6f, 11.59f)
+                lineTo(5.25f, 14.04f)
+                curveTo(5.09f, 14.32f, 5f, 14.65f, 5f, 15f)
+                curveTo(5f, 16.1f, 5.9f, 17f, 7f, 17f)
+                horizontalLineTo(19f)
+                verticalLineTo(15f)
+                horizontalLineTo(7.42f)
+                curveTo(7.28f, 15f, 7.17f, 14.89f, 7.17f, 14.75f)
+                lineTo(7.2f, 14.63f)
+                lineTo(8.1f, 13f)
+                horizontalLineTo(15.55f)
+                curveTo(16.3f, 13f, 16.96f, 12.59f, 17.3f, 11.97f)
+                lineTo(20.88f, 5.48f)
+                curveTo(20.96f, 5.34f, 21f, 5.17f, 21f, 5f)
+                curveTo(21f, 4.45f, 20.55f, 4f, 20f, 4f)
+                horizontalLineTo(5.21f)
+                lineTo(4.27f, 2f)
+                horizontalLineTo(1f)
+                close()
+                moveTo(17f, 18f)
+                curveTo(15.9f, 18f, 15.01f, 18.9f, 15.01f, 20f)
+                curveTo(15.01f, 21.1f, 15.9f, 22f, 17f, 22f)
+                curveTo(18.1f, 22f, 19f, 21.1f, 19f, 20f)
+                curveTo(19f, 18.9f, 18.1f, 18f, 17f, 18f)
+                close()
+            }
+        }.build()
+    }
 }

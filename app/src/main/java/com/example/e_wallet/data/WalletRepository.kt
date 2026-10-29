@@ -19,6 +19,18 @@ import com.example.e_wallet.model.TransactionStatus
 import com.example.e_wallet.model.TransactionType
 import com.example.e_wallet.model.User
 import com.example.e_wallet.model.Wallet
+import com.example.e_wallet.model.AnalyticsSummary
+import com.example.e_wallet.model.AnalyticsTimePeriod
+import com.example.e_wallet.model.CategoryBudget
+import com.example.e_wallet.model.DailySpendBar
+import com.example.e_wallet.model.FinancialHealthScore
+import com.example.e_wallet.model.SpendingCategory
+import com.example.e_wallet.model.SpendingSlice
+import com.example.e_wallet.model.TransactionClassifier
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,6 +79,7 @@ interface WalletRepository {
     val billers: StateFlow<List<Biller>>
     val savingsGoals: StateFlow<List<SavingsGoal>>
     val totalSavingsCents: StateFlow<Long>
+    val categoryBudgets: StateFlow<List<CategoryBudget>>
     val isAuthenticated: StateFlow<Boolean>
     val isOnboardingCompleted: StateFlow<Boolean>
 
@@ -183,6 +196,10 @@ interface WalletRepository {
     )
 
     fun resetDemoData()
+
+    fun setCategoryBudget(category: SpendingCategory, limitCents: Long)
+    fun deleteCategoryBudget(category: SpendingCategory)
+    fun getAnalyticsSummary(period: AnalyticsTimePeriod): AnalyticsSummary
 
     /** Persist an updated [User] (e.g. after profile edits). */
     fun updateUser(user: User)
@@ -655,6 +672,21 @@ class InMemoryWalletRepository : WalletRepository {
 
     private val _isOnboardingCompleted = MutableStateFlow(false)
     override val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
+
+    private val defaultCategoryBudgets = listOf(
+        CategoryBudget(SpendingCategory.FOOD_DINING, 20000L),      // $200.00
+        CategoryBudget(SpendingCategory.BILLS_UTILITIES, 30000L),  // $300.00
+        CategoryBudget(SpendingCategory.SHOPPING, 15000L),         // $150.00
+        CategoryBudget(SpendingCategory.TRANSPORT, 10000L),        // $100.00
+        CategoryBudget(SpendingCategory.ENTERTAINMENT, 8000L),     // $80.00
+        CategoryBudget(SpendingCategory.TRANSFERS, 25000L),        // $250.00
+        CategoryBudget(SpendingCategory.SAVINGS, 30000L),          // $300.00
+        CategoryBudget(SpendingCategory.OTHER, 15000L)             // $150.00
+    )
+
+    private val budgetMutex = Mutex()
+    private val _categoryBudgets = MutableStateFlow(defaultCategoryBudgets)
+    override val categoryBudgets: StateFlow<List<CategoryBudget>> = _categoryBudgets.asStateFlow()
 
     private val depositMutex = Mutex()
     private val withdrawMutex = Mutex()
@@ -1490,6 +1522,151 @@ class InMemoryWalletRepository : WalletRepository {
         _isOnboardingCompleted.value = true
     }
 
+    override fun setCategoryBudget(category: SpendingCategory, limitCents: Long) {
+        val currentList = _categoryBudgets.value.toMutableList()
+        val index = currentList.indexOfFirst { it.category == category }
+        if (index >= 0) {
+            currentList[index] = currentList[index].copy(monthlyLimitCents = limitCents)
+        } else {
+            currentList.add(CategoryBudget(category, limitCents))
+        }
+        _categoryBudgets.value = currentList
+    }
+
+    override fun deleteCategoryBudget(category: SpendingCategory) {
+        _categoryBudgets.value = _categoryBudgets.value.filterNot { it.category == category }
+    }
+
+    override fun getAnalyticsSummary(period: AnalyticsTimePeriod): AnalyticsSummary {
+        val now = System.currentTimeMillis()
+        val startTs = period.getStartTimestampMillis(now)
+        val endTs = period.getEndTimestampMillis(now)
+
+        val periodTxs = _transactions.value.filter {
+            it.status == TransactionStatus.COMPLETED && it.timestamp in startTs..endTs
+        }
+
+        var totalIncome = 0L
+        var totalExpense = 0L
+        var largestExpense = 0L
+        val categoryTotals = mutableMapOf<SpendingCategory, Long>()
+        val categoryCounts = mutableMapOf<SpendingCategory, Int>()
+        val outflows = mutableListOf<Transaction>()
+
+        for (tx in periodTxs) {
+            when (tx.type) {
+                TransactionType.RECEIVE,
+                TransactionType.DEPOSIT,
+                TransactionType.SAVINGS_WITHDRAWAL -> {
+                    totalIncome += tx.amount
+                }
+                TransactionType.SEND,
+                TransactionType.WITHDRAW,
+                TransactionType.QR_PAYMENT,
+                TransactionType.BILL_PAYMENT,
+                TransactionType.SAVINGS_DEPOSIT -> {
+                    val expenseAmount = tx.amount + tx.fee
+                    totalExpense += expenseAmount
+                    if (expenseAmount > largestExpense) {
+                        largestExpense = expenseAmount
+                    }
+                    val cat = TransactionClassifier.categorize(tx)
+                    categoryTotals[cat] = (categoryTotals[cat] ?: 0L) + expenseAmount
+                    categoryCounts[cat] = (categoryCounts[cat] ?: 0) + 1
+                    outflows.add(tx)
+                }
+            }
+        }
+
+        val netCashFlow = totalIncome - totalExpense
+        val savingsRate = if (totalIncome > 0L) {
+            (((totalIncome - totalExpense).coerceAtLeast(0L).toDouble() / totalIncome.toDouble()) * 100).toInt()
+        } else 0
+
+        var currentAngle = -90f
+        val slices = categoryTotals.entries
+            .sortedByDescending { it.value }
+            .map { (cat, amount) ->
+                val percentage = if (totalExpense > 0L) {
+                    ((amount.toDouble() / totalExpense.toDouble()) * 100).toFloat()
+                } else 0f
+                val sweep = (percentage / 100f) * 360f
+                val slice = SpendingSlice(
+                    category = cat,
+                    amountCents = amount,
+                    percentage = percentage,
+                    transactionCount = categoryCounts[cat] ?: 0,
+                    sweepAngle = sweep,
+                    startAngle = currentAngle
+                )
+                currentAngle += sweep
+                slice
+            }
+
+        val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
+        val cal = Calendar.getInstance()
+        val dayMillis = 24 * 3600 * 1000L
+        val past7Days = (6 downTo 0).map { dayOffset ->
+            val targetMillis = now - (dayOffset * dayMillis)
+            cal.timeInMillis = targetMillis
+            cal.set(Calendar.HOUR_OF_DAY, 0)
+            cal.set(Calendar.MINUTE, 0)
+            cal.set(Calendar.SECOND, 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            val dayStart = cal.timeInMillis
+            val dayEnd = dayStart + dayMillis - 1
+            val label = dayFormat.format(Date(dayStart))
+
+            val daySpent = outflows
+                .filter { it.timestamp in dayStart..dayEnd }
+                .sumOf { it.amount + it.fee }
+
+            Triple(label, dayStart, daySpent)
+        }
+
+        val maxDailySpent = past7Days.maxOfOrNull { it.third } ?: 0L
+        val dailySpendPoints = past7Days.map { (label, start, spent) ->
+            val norm = if (maxDailySpent > 0L) (spent.toFloat() / maxDailySpent.toFloat()).coerceIn(0.08f, 1f) else 0.08f
+            DailySpendBar(
+                label = label,
+                dateMillis = start,
+                amountCents = spent,
+                normalizedHeight = if (spent > 0L) norm else 0.08f
+            )
+        }
+
+        val avgDailySpend = if (dailySpendPoints.isNotEmpty()) {
+            dailySpendPoints.sumOf { it.amountCents } / dailySpendPoints.size
+        } else 0L
+
+        val budgets = _categoryBudgets.value
+        val overBudgetCount = budgets.count { b ->
+            val spent = categoryTotals[b.category] ?: 0L
+            b.isOverBudget(spent)
+        }
+
+        val health = FinancialHealthScore.calculate(
+            incomeCents = totalIncome,
+            expenseCents = totalExpense,
+            savingsRatePercent = savingsRate,
+            overBudgetCategories = overBudgetCount
+        )
+
+        return AnalyticsSummary(
+            period = period,
+            totalIncomeCents = totalIncome,
+            totalExpenseCents = totalExpense,
+            netCashFlowCents = netCashFlow,
+            savingsRatePercent = savingsRate,
+            averageDailySpendCents = avgDailySpend,
+            largestExpenseCents = largestExpense,
+            spendingSlices = slices,
+            dailySpendBars = dailySpendPoints,
+            healthScore = health,
+            overBudgetCategoriesCount = overBudgetCount
+        )
+    }
+
     override fun resetDemoData() {
         _currentUser.value = defaultUser
         _currentWallet.value = defaultWallet
@@ -1500,6 +1677,7 @@ class InMemoryWalletRepository : WalletRepository {
         _notifications.value = generateDefaultNotifications()
         _billers.value = defaultBillers
         _savingsGoals.value = defaultSavingsGoals
+        _categoryBudgets.value = defaultCategoryBudgets
         refreshTotalSavings()
         _unreadNotificationsCount.value = 3
         _currentPin.value = defaultPin

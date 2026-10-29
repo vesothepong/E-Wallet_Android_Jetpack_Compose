@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.e_wallet.ui.analytics.AnalyticsScreen
 import com.example.e_wallet.ui.auth.LoginScreen
 import com.example.e_wallet.ui.auth.OnboardingScreen
 import com.example.e_wallet.ui.auth.SplashScreen
@@ -28,6 +29,7 @@ object AppDestinations {
     const val NOTIFICATIONS = "notifications"
     const val BILL_PAYMENT = "bill_payment"
     const val SAVINGS = "savings"
+    const val ANALYTICS = "analytics"
 }
 
 @Composable
@@ -97,7 +99,16 @@ fun AppNavGraph(
                 },
                 onNavigateToSavings = {
                     navController.navigate(AppDestinations.SAVINGS)
+                },
+                onNavigateToAnalytics = {
+                    navController.navigate(AppDestinations.ANALYTICS)
                 }
+            )
+        }
+
+        composable(AppDestinations.ANALYTICS) {
+            AnalyticsScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

@@ -1033,6 +1033,7 @@ private fun BillReceiptContent(
     onDone: () -> Unit,
     onPayAnother: () -> Unit
 ) {
+    @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
     val biller = uiState.selectedBiller
     val ref = uiState.receiptReference ?: uiState.completedTransaction?.referenceNumber ?: "N/A"

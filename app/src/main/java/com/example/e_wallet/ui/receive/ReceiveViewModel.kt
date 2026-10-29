@@ -6,6 +6,7 @@ import com.example.e_wallet.data.WalletRepository
 import com.example.e_wallet.data.WalletRepositoryProvider
 import com.example.e_wallet.model.User
 import com.example.e_wallet.model.Wallet
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,8 +40,11 @@ data class ReceiveUiState(
 }
 
 class ReceiveViewModel(
-    private val repository: WalletRepository = WalletRepositoryProvider.repository
+    private val repository: WalletRepository = WalletRepositoryProvider.repository,
+    coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope = coroutineScope ?: viewModelScope
 
     private val _requestAmountInput = MutableStateFlow("")
     private val _isAmountFieldVisible = MutableStateFlow(false)
@@ -61,7 +65,7 @@ class ReceiveViewModel(
             snackbarMessage = snackbar
         )
     }.stateIn(
-        scope = viewModelScope,
+        scope = scope,
         started = SharingStarted.Eagerly,
         initialValue = ReceiveUiState(
             user = repository.currentUser.value,

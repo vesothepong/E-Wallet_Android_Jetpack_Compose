@@ -285,14 +285,14 @@ fun ReceiveBottomSheet(
                         val name = uiState.user?.fullName ?: ""
                         val amountPart = uiState.requestAmountCents
                             ?.let { "\nRequesting: ${Formatters.formatCentsToCurrency(it)}" } ?: ""
-                        val shareText = "Send money to $name via PocketPay\nWallet: $walletNumber$amountPart"
+                        val shareText = "Send money to $name via PocketPay\nWallet: $walletNumber$amountPart\nLink: ${uiState.qrData}"
 
-                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                        }
-                        context.startActivity(
-                            android.content.Intent.createChooser(intent, "Share via")
+                        val bitmap = QrCodeGenerator.generateQrBitmap(uiState.qrData)
+                        QrCodeGenerator.shareQrCode(
+                            context = context,
+                            qrBitmap = bitmap,
+                            shareText = shareText,
+                            chooserTitle = "Share Payment QR Code"
                         )
                         viewModel.onQrShared()
                     },
@@ -302,11 +302,11 @@ fun ReceiveBottomSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ── Demo note ─────────────────────────────────────────────────────
+            // ── Standard QR Badge ─────────────────────────────────────────────
             Text(
-                text = "This QR pattern is visual only in demo mode.\nA real app would use a scannable QR library.",
+                text = "Scannable ISO/IEC 18004 QR Code\nCompatible with PocketPay and camera barcode scanners.",
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 lineHeight = 16.sp
             )

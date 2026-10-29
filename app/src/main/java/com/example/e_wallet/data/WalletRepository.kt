@@ -26,6 +26,10 @@ import com.example.e_wallet.model.DailySpendBar
 import com.example.e_wallet.model.FinancialHealthScore
 import com.example.e_wallet.model.SpendingCategory
 import com.example.e_wallet.model.SpendingSlice
+import com.example.e_wallet.model.SplitBill
+import com.example.e_wallet.model.SplitBillCategory
+import com.example.e_wallet.model.SplitBillStatus
+import com.example.e_wallet.model.SplitParticipant
 import com.example.e_wallet.model.TransactionClassifier
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -80,6 +84,7 @@ interface WalletRepository {
     val savingsGoals: StateFlow<List<SavingsGoal>>
     val totalSavingsCents: StateFlow<Long>
     val categoryBudgets: StateFlow<List<CategoryBudget>>
+    val splitBills: StateFlow<List<SplitBill>>
     val isAuthenticated: StateFlow<Boolean>
     val isOnboardingCompleted: StateFlow<Boolean>
 
@@ -200,6 +205,18 @@ interface WalletRepository {
     fun setCategoryBudget(category: SpendingCategory, limitCents: Long)
     fun deleteCategoryBudget(category: SpendingCategory)
     fun getAnalyticsSummary(period: AnalyticsTimePeriod): AnalyticsSummary
+
+    suspend fun createSplitBill(
+        title: String,
+        category: SplitBillCategory,
+        totalAmountCents: Long,
+        participants: List<SplitParticipant>,
+        note: String = ""
+    ): SplitBill
+
+    suspend fun markParticipantPaid(splitBillId: String, participantId: String): Boolean
+    suspend fun sendSplitReminder(splitBillId: String, participantId: String): Boolean
+    suspend fun cancelSplitBill(splitBillId: String): Boolean
 
     /** Persist an updated [User] (e.g. after profile edits). */
     fun updateUser(user: User)
@@ -687,6 +704,96 @@ class InMemoryWalletRepository : WalletRepository {
     private val budgetMutex = Mutex()
     private val _categoryBudgets = MutableStateFlow(defaultCategoryBudgets)
     override val categoryBudgets: StateFlow<List<CategoryBudget>> = _categoryBudgets.asStateFlow()
+
+    private val defaultSplitBills = listOf(
+        SplitBill(
+            id = "split_001",
+            title = "Team Dinner & Drinks 🍕",
+            category = SplitBillCategory.DINING,
+            totalAmountCents = 14000L, // $140.00
+            createdAtMillis = System.currentTimeMillis() - 2 * 3600 * 1000L,
+            note = "Dinner split share 🍕",
+            participants = listOf(
+                SplitParticipant(
+                    participantId = "usr_demo_001",
+                    name = "Alex Morgan (You)",
+                    phoneNumber = "+1 (555) 234-5678",
+                    avatarInitials = "AM",
+                    amountCents = 3500L,
+                    isPaid = true,
+                    isHost = true
+                ),
+                SplitParticipant(
+                    participantId = "usr_demo_002",
+                    name = "Sarah Chen",
+                    phoneNumber = "+1 (555) 104-5521",
+                    avatarInitials = "SC",
+                    amountCents = 3500L,
+                    isPaid = true,
+                    paidAtMillis = System.currentTimeMillis() - 3600 * 1000L
+                ),
+                SplitParticipant(
+                    participantId = "usr_demo_003",
+                    name = "David Miller",
+                    phoneNumber = "+1 (555) 339-8810",
+                    avatarInitials = "DM",
+                    amountCents = 3500L,
+                    isPaid = false
+                ),
+                SplitParticipant(
+                    participantId = "usr_demo_004",
+                    name = "Emma Watson",
+                    phoneNumber = "+1 (555) 771-4490",
+                    avatarInitials = "EW",
+                    amountCents = 3500L,
+                    isPaid = false
+                )
+            ),
+            status = SplitBillStatus.ACTIVE
+        ),
+        SplitBill(
+            id = "split_002",
+            title = "Weekend Cabin Getaway 🏕️",
+            category = SplitBillCategory.TRIP,
+            totalAmountCents = 18000L, // $180.00
+            createdAtMillis = System.currentTimeMillis() - 4 * 24 * 3600 * 1000L,
+            note = "Cabin rental share",
+            participants = listOf(
+                SplitParticipant(
+                    participantId = "usr_demo_001",
+                    name = "Alex Morgan (You)",
+                    phoneNumber = "+1 (555) 234-5678",
+                    avatarInitials = "AM",
+                    amountCents = 6000L,
+                    isPaid = true,
+                    isHost = true
+                ),
+                SplitParticipant(
+                    participantId = "usr_demo_002",
+                    name = "Sarah Chen",
+                    phoneNumber = "+1 (555) 104-5521",
+                    avatarInitials = "SC",
+                    amountCents = 6000L,
+                    isPaid = true,
+                    paidAtMillis = System.currentTimeMillis() - 3 * 24 * 3600 * 1000L
+                ),
+                SplitParticipant(
+                    participantId = "usr_demo_005",
+                    name = "John Doe",
+                    phoneNumber = "+1 (555) 448-1983",
+                    avatarInitials = "JD",
+                    amountCents = 6000L,
+                    isPaid = true,
+                    paidAtMillis = System.currentTimeMillis() - 2 * 24 * 3600 * 1000L
+                )
+            ),
+            status = SplitBillStatus.SETTLED
+        )
+    )
+
+    private val splitMutex = Mutex()
+    private val _splitBills = MutableStateFlow(defaultSplitBills)
+    override val splitBills: StateFlow<List<SplitBill>> = _splitBills.asStateFlow()
 
     private val depositMutex = Mutex()
     private val withdrawMutex = Mutex()
@@ -1667,6 +1774,126 @@ class InMemoryWalletRepository : WalletRepository {
         )
     }
 
+    override suspend fun createSplitBill(
+        title: String,
+        category: SplitBillCategory,
+        totalAmountCents: Long,
+        participants: List<SplitParticipant>,
+        note: String
+    ): SplitBill = splitMutex.withLock {
+        val newBill = SplitBill(
+            id = "split_${System.currentTimeMillis()}",
+            title = title.trim(),
+            category = category,
+            totalAmountCents = totalAmountCents,
+            createdAtMillis = System.currentTimeMillis(),
+            note = note.trim(),
+            participants = participants,
+            status = if (participants.all { it.isPaid }) SplitBillStatus.SETTLED else SplitBillStatus.ACTIVE
+        )
+        _splitBills.value = listOf(newBill) + _splitBills.value
+        addNotification(
+            title = "Split Bill Created",
+            message = "Created split request '${newBill.title}' for ${Formatters.formatCentsToCurrency(totalAmountCents)}.",
+            type = NotificationType.TRANSACTION,
+            amountCents = totalAmountCents
+        )
+        return newBill
+    }
+
+    override suspend fun markParticipantPaid(splitBillId: String, participantId: String): Boolean = splitMutex.withLock {
+        val bills = _splitBills.value.toMutableList()
+        val billIndex = bills.indexOfFirst { it.id == splitBillId }
+        if (billIndex < 0) return false
+        val bill = bills[billIndex]
+
+        val participantIndex = bill.participants.indexOfFirst { it.participantId == participantId }
+        if (participantIndex < 0) return false
+        val p = bill.participants[participantIndex]
+        if (p.isPaid) return true
+
+        val updatedParticipant = p.copy(
+            isPaid = true,
+            paidAtMillis = System.currentTimeMillis()
+        )
+        val updatedParticipants = bill.participants.toMutableList()
+        updatedParticipants[participantIndex] = updatedParticipant
+
+        val allPaid = updatedParticipants.all { it.isPaid }
+        val updatedBill = bill.copy(
+            participants = updatedParticipants,
+            status = if (allPaid) SplitBillStatus.SETTLED else bill.status
+        )
+        bills[billIndex] = updatedBill
+        _splitBills.value = bills
+
+        // Credit host wallet balance and record transaction
+        val currentWlt = _currentWallet.value
+        val newBalance = currentWlt.currentBalance + p.amountCents
+        val newAvailable = currentWlt.availableBalance + p.amountCents
+        _currentWallet.value = currentWlt.copy(
+            currentBalance = newBalance,
+            availableBalance = newAvailable
+        )
+
+        val tx = Transaction(
+            transactionId = "tx_split_${System.currentTimeMillis()}",
+            type = TransactionType.RECEIVE,
+            senderId = p.participantId,
+            senderName = p.name,
+            receiverId = _currentUser.value.userId,
+            receiverName = _currentUser.value.fullName,
+            amount = p.amountCents,
+            fee = 0L,
+            timestamp = System.currentTimeMillis(),
+            description = "Split Share: ${bill.title} (${p.name})",
+            status = TransactionStatus.COMPLETED,
+            referenceNumber = "REF-SPLIT-${System.currentTimeMillis().toString().takeLast(6)}"
+        )
+        _transactions.value = listOf(tx) + _transactions.value
+
+        addNotification(
+            title = "Split Payment Received",
+            message = "${p.name} paid ${Formatters.formatCentsToCurrency(p.amountCents)} for '${bill.title}'.",
+            type = NotificationType.TRANSACTION,
+            amountCents = p.amountCents,
+            transactionId = tx.transactionId
+        )
+        return true
+    }
+
+    override suspend fun sendSplitReminder(splitBillId: String, participantId: String): Boolean = splitMutex.withLock {
+        val bills = _splitBills.value.toMutableList()
+        val billIndex = bills.indexOfFirst { it.id == splitBillId }
+        if (billIndex < 0) return false
+        val bill = bills[billIndex]
+
+        val participantIndex = bill.participants.indexOfFirst { it.participantId == participantId }
+        if (participantIndex < 0) return false
+        val p = bill.participants[participantIndex]
+
+        val updatedParticipants = bill.participants.toMutableList()
+        updatedParticipants[participantIndex] = p.copy(reminderCount = p.reminderCount + 1)
+        bills[billIndex] = bill.copy(participants = updatedParticipants)
+        _splitBills.value = bills
+
+        addNotification(
+            title = "Payment Reminder Sent",
+            message = "Reminder sent to ${p.name} for ${Formatters.formatCentsToCurrency(p.amountCents)}.",
+            type = NotificationType.SYSTEM
+        )
+        return true
+    }
+
+    override suspend fun cancelSplitBill(splitBillId: String): Boolean = splitMutex.withLock {
+        val bills = _splitBills.value.toMutableList()
+        val billIndex = bills.indexOfFirst { it.id == splitBillId }
+        if (billIndex < 0) return false
+        bills[billIndex] = bills[billIndex].copy(status = SplitBillStatus.CANCELLED)
+        _splitBills.value = bills
+        return true
+    }
+
     override fun resetDemoData() {
         _currentUser.value = defaultUser
         _currentWallet.value = defaultWallet
@@ -1678,6 +1905,7 @@ class InMemoryWalletRepository : WalletRepository {
         _billers.value = defaultBillers
         _savingsGoals.value = defaultSavingsGoals
         _categoryBudgets.value = defaultCategoryBudgets
+        _splitBills.value = defaultSplitBills
         refreshTotalSavings()
         _unreadNotificationsCount.value = 3
         _currentPin.value = defaultPin

@@ -15,6 +15,7 @@ import com.example.e_wallet.ui.home.HomeScreen
 import com.example.e_wallet.ui.notifications.NotificationsScreen
 import com.example.e_wallet.ui.profile.ProfileScreen
 import com.example.e_wallet.ui.savings.SavingsScreen
+import com.example.e_wallet.ui.split.SplitBillScreen
 import com.example.e_wallet.ui.wallet.WalletScreen
 
 /** Top-level navigation destinations for PocketPay. */
@@ -30,6 +31,7 @@ object AppDestinations {
     const val BILL_PAYMENT = "bill_payment"
     const val SAVINGS = "savings"
     const val ANALYTICS = "analytics"
+    const val SPLIT_BILL = "split_bill"
 }
 
 @Composable
@@ -102,7 +104,16 @@ fun AppNavGraph(
                 },
                 onNavigateToAnalytics = {
                     navController.navigate(AppDestinations.ANALYTICS)
+                },
+                onNavigateToSplitBill = {
+                    navController.navigate(AppDestinations.SPLIT_BILL)
                 }
+            )
+        }
+
+        composable(AppDestinations.SPLIT_BILL) {
+            SplitBillScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

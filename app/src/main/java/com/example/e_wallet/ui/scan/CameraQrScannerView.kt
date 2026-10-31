@@ -4,7 +4,10 @@ package com.example.e_wallet.ui.scan
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,7 +46,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -90,7 +95,8 @@ fun CameraQrScannerView(
     onToggleTorch: () -> Unit,
     onToggleCamera: () -> Unit,
     onQrScanned: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onScanError: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -119,6 +125,30 @@ fun CameraQrScannerView(
             .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
             .build()
         BarcodeScanning.getClient(options)
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val inputImage = InputImage.fromFilePath(context, uri)
+                barcodeScanner.process(inputImage)
+                    .addOnSuccessListener(ContextCompat.getMainExecutor(context)) { barcodes ->
+                        val payload = barcodes.firstOrNull()?.rawValue
+                        if (!payload.isNullOrBlank()) {
+                            onQrScanned(payload)
+                        } else {
+                            onScanError("No QR code found in selected photo. Please select another image.")
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        onScanError("Failed to read image: ${e.localizedMessage ?: "Unknown error"}")
+                    }
+            } catch (e: Exception) {
+                onScanError("Could not open photo: ${e.localizedMessage ?: "File error"}")
+            }
+        }
     }
 
     DisposableEffect(Unit) {
@@ -218,17 +248,17 @@ fun CameraQrScannerView(
                 modifier = Modifier.fillMaxSize()
             )
         } else {
-            // Permission request prompt UI
+            // Permission request prompt UI with Fallbacks (Gallery + Settings)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp),
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(48.dp)
                         .background(PrimaryBlue.copy(alpha = 0.2f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -236,41 +266,81 @@ fun CameraQrScannerView(
                         imageVector = PocketPayIcons.QrCode,
                         contentDescription = "Camera Required",
                         tint = PrimaryBlue,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Camera Access Required",
-                    fontSize = 14.sp,
+                    text = "Camera Access Needed",
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
-                    text = "Allow camera to scan PocketPay & Merchant QR codes",
-                    fontSize = 11.sp,
+                    text = "Scan QR or pick image from photo gallery",
+                    fontSize = 10.sp,
                     color = Color.White.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
                 )
 
-                Button(
-                    onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 8.dp
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 12.dp,
+                            vertical = 6.dp
+                        )
+                    ) {
+                        Text(
+                            text = "Enable",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 12.dp,
+                            vertical = 6.dp
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                    ) {
+                        Text(
+                            text = "Gallery",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        context.startActivity(intent)
+                    },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
                 ) {
                     Text(
-                        text = "Enable Camera",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = "Open App Settings",
+                        fontSize = 10.sp,
+                        color = Color.White.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -332,7 +402,7 @@ fun CameraQrScannerView(
             )
         }
 
-        // Camera Overlay Controls (Torch & Camera Flip)
+        // Camera Overlay Controls (Torch, Gallery Picker, Camera Flip)
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -352,6 +422,19 @@ fun CameraQrScannerView(
                     imageVector = if (isTorchOn) PocketPayIcons.FlashOn else PocketPayIcons.FlashOff,
                     contentDescription = "Torch",
                     tint = if (isTorchOn) WarningAmber else Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Gallery Picker Button
+            IconButton(
+                onClick = { galleryLauncher.launch("image/*") },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = PocketPayIcons.Image,
+                    contentDescription = "Pick QR from Photo Gallery",
+                    tint = Color.White,
                     modifier = Modifier.size(20.dp)
                 )
             }

@@ -1,5 +1,6 @@
 package com.example.e_wallet.ui.scan
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -60,6 +61,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -137,6 +139,7 @@ fun ScanQrBottomSheet(
                         onToggleTorch = viewModel::toggleTorch,
                         onToggleCamera = viewModel::toggleCamera,
                         onQrScanned = viewModel::onScanResult,
+                        onScanError = viewModel::onScanError,
                         onSelectPreset = viewModel::onSelectPreset,
                         onOpenManualInput = { viewModel.toggleManualInputDialog(true) }
                     )
@@ -155,6 +158,7 @@ fun ScanQrBottomSheet(
                     PinVerificationView(
                         uiState = uiState,
                         onBack = viewModel::backToPaymentDetails,
+                        onBiometricClick = viewModel::authenticateWithBiometrics,
                         onDigitClick = viewModel::onPinDigit,
                         onDeleteClick = viewModel::onPinDelete,
                         onClearClick = viewModel::onPinClear
@@ -175,6 +179,7 @@ fun ScanQrBottomSheet(
                 }
                 ScanQrStep.ERROR -> {
                     ErrorView(
+                        title = uiState.errorTitle ?: "Payment Failed",
                         errorMessage = uiState.errorMessage ?: "Payment could not be completed.",
                         onRetry = viewModel::backToScanner
                     )
@@ -204,6 +209,7 @@ private fun ScannerView(
     onToggleTorch: () -> Unit,
     onToggleCamera: () -> Unit,
     onQrScanned: (String) -> Unit,
+    onScanError: (String) -> Unit,
     onSelectPreset: (DemoQrPreset) -> Unit,
     onOpenManualInput: () -> Unit
 ) {
@@ -249,13 +255,14 @@ private fun ScannerView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Hardware CameraX + Google ML Kit Live Viewfinder
+        // Hardware CameraX + Google ML Kit Live Viewfinder + Photo Gallery Fallback
         CameraQrScannerView(
             isTorchOn = isTorchOn,
             isFrontCamera = isFrontCamera,
             onToggleTorch = onToggleTorch,
             onToggleCamera = onToggleCamera,
-            onQrScanned = onQrScanned
+            onQrScanned = onQrScanned,
+            onScanError = onScanError
         )
 
         Spacer(modifier = Modifier.height(18.dp))
@@ -310,7 +317,7 @@ private fun ScannerView(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. PAYMENT DETAILS VIEW (Amount, Receiver, Balance Breakdown)
+// 2. PAYMENT DETAILS VIEW (Amount, Receiver, Balance Breakdown, Pre-Check)
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -344,14 +351,14 @@ private fun PaymentDetailsView(
                 )
             }
             Text(
-                text = "Confirm Payment",
+                text = "Payment Confirmation",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.size(48.dp)) // balance layout
+            Spacer(modifier = Modifier.size(48.dp))
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -425,7 +432,7 @@ private fun PaymentDetailsView(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Amount Section
+        // Amount Section: Dynamic locked invoice vs Editable flexible amount
         if (uiState.isAmountLocked) {
             // Locked by invoice
             Surface(
@@ -481,6 +488,7 @@ private fun PaymentDetailsView(
                 OutlinedTextField(
                     value = uiState.amountInput,
                     onValueChange = onAmountChanged,
+                    placeholder = { Text("0.00") },
                     modifier = Modifier.fillMaxWidth(),
                     prefix = {
                         Text(
@@ -569,13 +577,59 @@ private fun PaymentDetailsView(
                 BreakdownRow(
                     label = "Balance After Payment",
                     value = Formatters.formatCentsToCurrency(uiState.remainingBalanceCents),
-                    valueColor = if (uiState.totalDebitCents > uiState.availableBalanceCents) ExpenseRose else SuccessGreen
+                    valueColor = if (uiState.isInsufficientBalance) ExpenseRose else SuccessGreen
                 )
             }
         }
 
+        // Insufficient Balance Pre-Check Alert Banner
+        if (uiState.isInsufficientBalance) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = ExpenseRose.copy(alpha = 0.12f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseRose.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(ExpenseRose.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = PocketPayIcons.Info,
+                            contentDescription = null,
+                            tint = ExpenseRose,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Insufficient Wallet Balance",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ExpenseRose
+                        )
+                        val deficit = uiState.totalDebitCents - uiState.availableBalanceCents
+                        Text(
+                            text = "Available: ${Formatters.formatCentsToCurrency(uiState.availableBalanceCents)}. You need ${Formatters.formatCentsToCurrency(deficit)} more to complete this payment.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
         // Error message if any
-        if (uiState.errorMessage != null) {
+        if (uiState.errorMessage != null && !uiState.isInsufficientBalance) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = uiState.errorMessage,
@@ -587,7 +641,14 @@ private fun PaymentDetailsView(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Continue Button
+        val buttonText = when {
+            uiState.amountCents == 0L -> "Enter Payment Amount"
+            uiState.isInsufficientBalance -> "Insufficient Balance"
+            uiState.isOverLimit -> "Exceeds $2,500.00 Limit"
+            else -> "Confirm & Authorize (${Formatters.formatCentsToCurrency(uiState.totalDebitCents)})"
+        }
+
+        // Confirm / Authorize Button
         Button(
             onClick = onProceed,
             enabled = uiState.isValidAmount,
@@ -601,7 +662,7 @@ private fun PaymentDetailsView(
                 .height(52.dp)
         ) {
             Text(
-                text = "Continue to PIN",
+                text = buttonText,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -611,13 +672,14 @@ private fun PaymentDetailsView(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. PIN VERIFICATION VIEW (Custom Keypad & Secure Indicators)
+// 3. PIN & BIOMETRIC VERIFICATION VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PinVerificationView(
     uiState: ScanQrUiState,
     onBack: () -> Unit,
+    onBiometricClick: () -> Unit,
     onDigitClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
     onClearClick: () -> Unit
@@ -666,10 +728,10 @@ private fun PinVerificationView(
             )
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Enter 4-Digit Security PIN",
+            text = "Payment Authorization",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -684,7 +746,54 @@ private fun PinVerificationView(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Biometric Option (if enabled)
+        if (uiState.isBiometricsEnabled) {
+            Button(
+                onClick = onBiometricClick,
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SecondaryTeal
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Icon(
+                    imageVector = PocketPayIcons.Fingerprint,
+                    contentDescription = "Biometrics",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Authorize with Biometrics",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Text(
+                    text = "  OR ENTER 4-DIGIT PIN  ",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+        }
 
         // 4 PIN Dots
         Row(
@@ -710,7 +819,7 @@ private fun PinVerificationView(
         }
 
         // Demo PIN Hint Badge
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Surface(
             shape = RoundedCornerShape(8.dp),
             color = WarningAmber.copy(alpha = 0.12f)
@@ -736,7 +845,7 @@ private fun PinVerificationView(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Numeric Keypad
         NumericKeypad(
@@ -796,6 +905,7 @@ private fun SuccessReceiptView(
     onDone: () -> Unit
 ) {
     val tx = transaction ?: return
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -852,6 +962,7 @@ private fun SuccessReceiptView(
                 ReceiptRow(label = "Transaction Type", value = "QR Payment")
                 ReceiptRow(label = "Reference No.", value = tx.referenceNumber)
                 ReceiptRow(label = "Timestamp", value = Formatters.formatTimestampToFullDate(tx.timestamp))
+                ReceiptRow(label = "Payment Source", value = "PocketPay Wallet")
                 ReceiptRow(label = "Remaining Balance", value = Formatters.formatCentsToCurrency(newBalanceCents))
                 ReceiptRow(label = "Status", value = "COMPLETED", valueColor = SuccessGreen, isBadge = true)
             }
@@ -859,20 +970,47 @@ private fun SuccessReceiptView(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = onDone,
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Done",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+            OutlinedButton(
+                onClick = {
+                    val shareText = "PocketPay Payment Receipt\nPaid To: ${tx.receiverName ?: "Unknown"}\nAmount: ${Formatters.formatCentsToCurrency(tx.amount)}\nReference: ${tx.referenceNumber}\nStatus: Completed"
+                    val sendIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                        type = "text/plain"
+                    }
+                    context.startActivity(Intent.createChooser(sendIntent, "Share Receipt"))
+                },
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp)
+            ) {
+                Text(
+                    text = "Share Receipt",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Button(
+                onClick = onDone,
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp)
+            ) {
+                Text(
+                    text = "Done",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
         }
     }
 }
@@ -883,6 +1021,7 @@ private fun SuccessReceiptView(
 
 @Composable
 private fun ErrorView(
+    title: String = "Payment Failed",
     errorMessage: String,
     onRetry: () -> Unit
 ) {
@@ -909,7 +1048,7 @@ private fun ErrorView(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Payment Failed",
+            text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface

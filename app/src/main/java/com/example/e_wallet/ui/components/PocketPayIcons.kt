@@ -1778,4 +1778,34 @@ object PocketPayIcons {
             }
         }.build()
     }
+
+    val Image: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Image",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(21f, 19f)
+                verticalLineTo(5f)
+                curveTo(21f, 3.9f, 20.1f, 3f, 19f, 3f)
+                horizontalLineTo(5f)
+                curveTo(3.9f, 3f, 3f, 3.9f, 3f, 5f)
+                verticalLineTo(19f)
+                curveTo(3f, 20.1f, 3.9f, 21f, 5f, 21f)
+                horizontalLineTo(19f)
+                curveTo(20.1f, 21f, 21f, 20.1f, 21f, 19f)
+                close()
+                moveTo(8.5f, 13.5f)
+                lineTo(11f, 16.51f)
+                lineTo(14.5f, 12f)
+                lineTo(19f, 18f)
+                horizontalLineTo(5f)
+                lineTo(8.5f, 13.5f)
+                close()
+            }
+        }.build()
+    }
 }

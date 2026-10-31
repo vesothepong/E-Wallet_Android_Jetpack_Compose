@@ -80,13 +80,32 @@ object QrCodeParser {
         if (trimmed.isBlank()) return null
 
         return try {
-            if (trimmed.startsWith("pocketpay://", ignoreCase = true)) {
-                parsePocketPayUri(trimmed, knownBeneficiaries)
-            } else {
-                parsePlainOrFallback(trimmed, knownBeneficiaries)
+            when {
+                trimmed.startsWith("pocketpay://", ignoreCase = true) -> {
+                    parsePocketPayUri(trimmed, knownBeneficiaries)
+                }
+                trimmed.startsWith("PKP-", ignoreCase = true) -> {
+                    parsePlainOrFallback(trimmed, knownBeneficiaries)
+                }
+                trimmed.startsWith("pay:", ignoreCase = true) || trimmed.startsWith("wallet:", ignoreCase = true) -> {
+                    parsePlainOrFallback(trimmed, knownBeneficiaries)
+                }
+                else -> {
+                    // Check if it matches a known contact/beneficiary by ID or wallet
+                    val matchedBen = knownBeneficiaries.firstOrNull {
+                        it.walletNumber.equals(trimmed, ignoreCase = true) ||
+                        it.receiverUserId.equals(trimmed, ignoreCase = true)
+                    }
+                    if (matchedBen != null) {
+                        parsePlainOrFallback(trimmed, knownBeneficiaries)
+                    } else {
+                        // Unrecognized format / invalid QR code
+                        null
+                    }
+                }
             }
         } catch (e: Exception) {
-            parsePlainOrFallback(trimmed, knownBeneficiaries)
+            null
         }
     }
 

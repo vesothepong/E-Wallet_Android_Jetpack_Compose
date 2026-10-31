@@ -114,12 +114,12 @@ class ScanQrSimulationTest {
 
     @Test
     fun testQrPaymentInsufficientFundsFailsWithoutTouchingBalance() = runBlocking {
-        // Drop balance by withdrawing $2,000.00 first, leaving $450.00 (45000L)
-        repository.withdraw(amountCents = 200000L)
+        // Drop balance by withdrawing $2,000 6 times, leaving $450.80
+        repeat(6) { repository.withdraw(amountCents = 200000L) }
         val balanceAfterWithdraw = repository.currentWallet.value.currentBalance
         val txCountAfterWithdraw = repository.transactions.value.size
 
-        // Attempt QR payment of $500.00 (50000L > 45000L available)
+        // Attempt QR payment of $500.00 (50000L > 45080L available)
         val result = repository.payQr(
             receiverWalletNumber = "PKP-MCH-001",
             receiverName = "Starbucks Coffee",

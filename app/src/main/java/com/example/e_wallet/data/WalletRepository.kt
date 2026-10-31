@@ -88,12 +88,15 @@ interface WalletRepository {
     val isAuthenticated: StateFlow<Boolean>
     val isOnboardingCompleted: StateFlow<Boolean>
     val selectedCurrency: StateFlow<String>
+    val isDarkTheme: StateFlow<Boolean>
 
     fun login(identifier: String, pin: String): Boolean
     fun loginWithBiometrics(): Boolean
     fun register(fullName: String, email: String, phoneNumber: String, pin: String): Boolean
     fun logout()
     fun completeOnboarding()
+    fun toggleDarkTheme()
+    fun setDarkTheme(isDark: Boolean)
 
     suspend fun deposit(
         amountCents: Long,
@@ -232,19 +235,19 @@ class InMemoryWalletRepository : WalletRepository {
 
     private val defaultUser = User(
         userId = "usr_demo_001",
-        fullName = "Alex Morgan",
-        phoneNumber = "+1 (555) 234-5678",
-        email = "alex.morgan@pocketpay.demo",
+        fullName = "Kantumruy Dev",
+        phoneNumber = "+1 (555) 019-8810",
+        email = "kantumruy.dev@pocketpay.io",
         accountStatus = AccountStatus.ACTIVE,
-        role = "VERIFIED_DEMO_USER"
+        role = "KYC_VERIFIED_TIER_2"
     )
 
     private val defaultWallet = Wallet(
         walletId = "wlt_001",
-        walletNumber = "PKP-8829-4102",
+        walletNumber = "PKP-8821-4402",
         userId = "usr_demo_001",
-        currentBalance = 245000L, // $2,450.00
-        availableBalance = 245000L,
+        currentBalance = 1245080L, // $12,450.80
+        availableBalance = 1245080L,
         currency = "USD"
     )
 
@@ -271,18 +274,18 @@ class InMemoryWalletRepository : WalletRepository {
             beneficiaryId = "ben_003",
             ownerUserId = "usr_demo_001",
             receiverUserId = "usr_demo_004",
-            displayName = "Emma Watson",
+            displayName = "Alex Vance",
             walletNumber = "PKP-7721-3904",
-            avatarInitials = "EW",
+            avatarInitials = "AV",
             isFavorite = true
         ),
         Beneficiary(
             beneficiaryId = "ben_004",
             ownerUserId = "usr_demo_001",
             receiverUserId = "usr_demo_005",
-            displayName = "John Doe",
+            displayName = "Emily Rose",
             walletNumber = "PKP-4482-1983",
-            avatarInitials = "JD",
+            avatarInitials = "ER",
             isFavorite = false
         )
     )
@@ -294,102 +297,74 @@ class InMemoryWalletRepository : WalletRepository {
 
         return listOf(
             Transaction(
-                transactionId = "tx_1001",
-                type = TransactionType.RECEIVE,
-                senderId = "usr_demo_002",
-                senderName = "Sarah Chen",
-                receiverId = "usr_demo_001",
-                receiverName = "Alex Morgan",
-                amount = 15000L, // $150.00
-                fee = 0L,
-                timestamp = now - 2 * hour,
-                description = "Dinner split share 🍕",
-                status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261021-001"
-            ),
-            Transaction(
-                transactionId = "tx_1002",
-                type = TransactionType.DEPOSIT,
-                senderId = null,
-                senderName = "Demo Bank Top-up",
-                receiverId = "usr_demo_001",
-                receiverName = "Alex Morgan",
-                amount = 50000L, // $500.00
-                fee = 0L,
-                timestamp = now - 26 * hour,
-                description = "Simulated bank deposit",
-                status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261020-002"
-            ),
-            Transaction(
-                transactionId = "tx_1003",
+                transactionId = "tx_992140188",
                 type = TransactionType.SEND,
                 senderId = "usr_demo_001",
-                senderName = "Alex Morgan",
-                receiverId = "usr_demo_003",
-                receiverName = "David Miller",
-                amount = 4500L, // $45.00
+                senderName = "Kantumruy Dev",
+                receiverId = "mch_apple",
+                receiverName = "Apple Store",
+                amount = 79900L, // $799.00
                 fee = 0L,
-                timestamp = now - 30 * hour,
-                description = "Movie tickets 🎬",
+                timestamp = now - 15 * 60 * 1000L,
+                description = "MacBook accessories & adapter",
                 status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261020-003"
+                referenceNumber = "REF-APL-88219"
             ),
             Transaction(
                 transactionId = "tx_1004",
                 type = TransactionType.QR_PAYMENT,
                 senderId = "usr_demo_001",
-                senderName = "Alex Morgan",
+                senderName = "Kantumruy Dev",
                 receiverId = "mch_001",
                 receiverName = "Starbucks Coffee",
                 amount = 850L, // $8.50
                 fee = 0L,
-                timestamp = now - 2 * day,
-                description = "Morning Caramel Macchiato ☕",
+                timestamp = now - 2 * hour,
+                description = "Coffee & Pastry",
                 status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261019-004"
+                referenceNumber = "REF-QRP-883921"
             ),
             Transaction(
-                transactionId = "tx_1005",
-                type = TransactionType.WITHDRAW,
+                transactionId = "tx_1002",
+                type = TransactionType.RECEIVE,
+                senderId = "corp_payroll",
+                senderName = "Salary Deposit",
+                receiverId = "usr_demo_001",
+                receiverName = "Kantumruy Dev",
+                amount = 425000L, // $4,250.00
+                fee = 0L,
+                timestamp = now - 24 * hour,
+                description = "Monthly Payroll Deposit",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-DEP-773190"
+            ),
+            Transaction(
+                transactionId = "tx_1008",
+                type = TransactionType.BILL_PAYMENT,
                 senderId = "usr_demo_001",
-                senderName = "Alex Morgan",
-                receiverId = null,
-                receiverName = "ATM Cash Withdrawal",
-                amount = 10000L, // $100.00
+                senderName = "Kantumruy Dev",
+                receiverId = "biller_water_01",
+                receiverName = "City Water Utility",
+                amount = 4250L, // $42.50
+                fee = 0L,
+                timestamp = now - 28 * hour,
+                description = "Water & Sewage Utility",
+                status = TransactionStatus.COMPLETED,
+                referenceNumber = "REF-BIL-449102"
+            ),
+            Transaction(
+                transactionId = "tx_1009",
+                type = TransactionType.RECEIVE,
+                senderId = "usr_demo_003",
+                senderName = "David Miller",
+                receiverId = "usr_demo_001",
+                receiverName = "Kantumruy Dev",
+                amount = 2000L, // $20.00
                 fee = 0L,
                 timestamp = now - 3 * day,
-                description = "Simulated ATM Cashout",
+                description = "Peer Transfer",
                 status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261018-005"
-            ),
-            Transaction(
-                transactionId = "tx_1006",
-                type = TransactionType.SEND,
-                senderId = "usr_demo_001",
-                senderName = "Alex Morgan",
-                receiverId = "usr_demo_004",
-                receiverName = "Emma Watson",
-                amount = 2500L, // $25.00
-                fee = 0L,
-                timestamp = now - 4 * day,
-                description = "Book club subscription 📚",
-                status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261017-006"
-            ),
-            Transaction(
-                transactionId = "tx_1007",
-                type = TransactionType.RECEIVE,
-                senderId = "usr_demo_005",
-                senderName = "John Doe",
-                receiverId = "usr_demo_001",
-                receiverName = "Alex Morgan",
-                amount = 8000L, // $80.00
-                fee = 0L,
-                timestamp = now - 5 * day,
-                description = "Freelance consulting share",
-                status = TransactionStatus.COMPLETED,
-                referenceNumber = "REF-20261016-007"
+                referenceNumber = "REF-P2P-339211"
             )
         )
     }
@@ -397,10 +372,10 @@ class InMemoryWalletRepository : WalletRepository {
     private val defaultCards = listOf(
         PaymentCard(
             cardId = "crd_001",
-            cardholderName = "Alex Morgan",
-            cardNumberMasked = "•••• •••• •••• 9924",
-            fullCardNumber = "4812 9012 3456 9924",
-            expiryDate = "08/29",
+            cardholderName = "Kantumruy Dev",
+            cardNumberMasked = "•••• •••• •••• 5521",
+            fullCardNumber = "4812 9012 3456 5521",
+            expiryDate = "09/29",
             cvv = "742",
             cardType = CardType.VIRTUAL_DEBIT,
             cardNetwork = CardNetwork.VISA,
@@ -410,47 +385,47 @@ class InMemoryWalletRepository : WalletRepository {
             isInternationalEnabled = false,
             monthlyLimitCents = 300000L, // $3,000.00
             monthlySpentCents = 85000L,  // $850.00
-            gradientStartColorHex = 0xFF4338CA,
-            gradientEndColorHex = 0xFF7E22CE
+            gradientStartColorHex = 0xFF1E1B4B,
+            gradientEndColorHex = 0xFF312E81
         ),
         PaymentCard(
             cardId = "crd_002",
-            cardholderName = "Alex Morgan",
-            cardNumberMasked = "•••• •••• •••• 1042",
-            fullCardNumber = "5421 8820 9102 1042",
+            cardholderName = "Kantumruy Dev",
+            cardNumberMasked = "•••• •••• •••• 8812",
+            fullCardNumber = "5412 8819 2201 8812",
             expiryDate = "11/28",
-            cvv = "389",
+            cvv = "319",
             cardType = CardType.PHYSICAL_DEBIT,
             cardNetwork = CardNetwork.MASTERCARD,
             isFrozen = false,
             isPrimary = false,
             isOnlinePaymentEnabled = true,
             isInternationalEnabled = true,
-            monthlyLimitCents = 500000L, // $5,000.00
-            monthlySpentCents = 125000L, // $1,250.00
-            gradientStartColorHex = 0xFF0F172A,
-            gradientEndColorHex = 0xFF334155
+            monthlyLimitCents = 500000L,
+            monthlySpentCents = 120000L,
+            gradientStartColorHex = 0xFF0D9488,
+            gradientEndColorHex = 0xFF065F46
         )
     )
 
     private val defaultBankAccounts = listOf(
         BankAccount(
             accountId = "bnk_001",
-            bankName = "Chase Premier Checking",
+            bankName = "Chase Bank Checking",
             accountType = "Checking",
-            accountNumberMasked = "•••• 4812",
+            accountNumberMasked = "•••• 4412",
             routingNumberMasked = "•••• 0210",
             isPrimary = true,
-            balanceCents = 1425000L
+            balanceCents = 832000L // $8,320.00
         ),
         BankAccount(
             accountId = "bnk_002",
-            bankName = "Bank of America Advantage Savings",
+            bankName = "Bank of America Savings",
             accountType = "Savings",
-            accountNumberMasked = "•••• 9021",
+            accountNumberMasked = "•••• 9011",
             routingNumberMasked = "•••• 0440",
             isPrimary = false,
-            balanceCents = 2890000L
+            balanceCents = 1450000L // $14,500.00
         )
     )
 
@@ -626,36 +601,36 @@ class InMemoryWalletRepository : WalletRepository {
     private val defaultSavingsGoals = listOf(
         SavingsGoal(
             id = "goal_001",
-            name = "Emergency Safety Net",
-            targetAmountCents = 500000L, // $5,000.00
-            currentAmountCents = 240000L, // $2,400.00 (48%)
-            category = SavingsCategory.EMERGENCY,
-            targetDateMillis = System.currentTimeMillis() + 180L * 24 * 3600 * 1000,
-            isLocked = true,
+            name = "Summer Vacation to Bali",
+            targetAmountCents = 300000L, // $3,000.00
+            currentAmountCents = 180000L, // $1,800.00 (60%)
+            category = SavingsCategory.TRAVEL,
+            targetDateMillis = System.currentTimeMillis() + 300L * 24 * 3600 * 1000,
+            isLocked = false,
             apyRatePercent = 4.50,
-            note = "6 months of living expenses buffer"
+            note = "$1,200.00 remaining • Target: Aug 2027"
         ),
         SavingsGoal(
             id = "goal_002",
-            name = "Tokyo Vacation",
-            targetAmountCents = 350000L, // $3,500.00
-            currentAmountCents = 175000L, // $1,750.00 (50%)
-            category = SavingsCategory.TRAVEL,
-            targetDateMillis = System.currentTimeMillis() + 90L * 24 * 3600 * 1000,
+            name = "MacBook Pro M4 Setup",
+            targetAmountCents = 250000L, // $2,500.00
+            currentAmountCents = 240000L, // $2,400.00 (96%)
+            category = SavingsCategory.TECH,
+            targetDateMillis = System.currentTimeMillis() + 60L * 24 * 3600 * 1000,
             isLocked = false,
             apyRatePercent = 4.50,
-            note = "Flights & hotel for autumn trip"
+            note = "Almost Done!"
         ),
         SavingsGoal(
             id = "goal_003",
-            name = "MacBook Pro M-Series",
-            targetAmountCents = 200000L, // $2,000.00
-            currentAmountCents = 160000L, // $1,600.00 (80%)
-            category = SavingsCategory.TECH,
-            targetDateMillis = System.currentTimeMillis() + 30L * 24 * 3600 * 1000,
-            isLocked = false,
+            name = "6-Month Emergency Fund",
+            targetAmountCents = 500000L, // $5,000.00
+            currentAmountCents = 225000L, // $2,250.00 (45%)
+            category = SavingsCategory.EMERGENCY,
+            targetDateMillis = System.currentTimeMillis() + 365L * 24 * 3600 * 1000,
+            isLocked = true,
             apyRatePercent = 4.50,
-            note = "Upgrade developer workstation"
+            note = "Buffer fund"
         )
     )
 
@@ -663,7 +638,7 @@ class InMemoryWalletRepository : WalletRepository {
     private val _savingsGoals = MutableStateFlow(defaultSavingsGoals)
     override val savingsGoals: StateFlow<List<SavingsGoal>> = _savingsGoals.asStateFlow()
 
-    private val _totalSavingsCents = MutableStateFlow(defaultSavingsGoals.sumOf { it.currentAmountCents })
+    private val _totalSavingsCents = MutableStateFlow(645000L) // $6,450.00
     override val totalSavingsCents: StateFlow<Long> = _totalSavingsCents.asStateFlow()
 
     private fun refreshTotalSavings() {
@@ -695,12 +670,23 @@ class InMemoryWalletRepository : WalletRepository {
     private val _selectedCurrency = MutableStateFlow("USD")
     override val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
 
+    private val _isDarkTheme = MutableStateFlow(false)
+    override val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
+
+    override fun toggleDarkTheme() {
+        _isDarkTheme.value = !_isDarkTheme.value
+    }
+
+    override fun setDarkTheme(isDark: Boolean) {
+        _isDarkTheme.value = isDark
+    }
+
     private val defaultCategoryBudgets = listOf(
-        CategoryBudget(SpendingCategory.FOOD_DINING, 20000L),      // $200.00
-        CategoryBudget(SpendingCategory.BILLS_UTILITIES, 30000L),  // $300.00
-        CategoryBudget(SpendingCategory.SHOPPING, 15000L),         // $150.00
+        CategoryBudget(SpendingCategory.FOOD_DINING, 50000L),      // $500.00 limit ($380.00 spent)
+        CategoryBudget(SpendingCategory.SHOPPING, 30000L),         // $300.00 limit ($210.00 spent)
+        CategoryBudget(SpendingCategory.ENTERTAINMENT, 15000L),    // $150.00 limit ($145.00 spent - near limit)
+        CategoryBudget(SpendingCategory.BILLS_UTILITIES, 20000L),  // $200.00
         CategoryBudget(SpendingCategory.TRANSPORT, 10000L),        // $100.00
-        CategoryBudget(SpendingCategory.ENTERTAINMENT, 8000L),     // $80.00
         CategoryBudget(SpendingCategory.TRANSFERS, 25000L),        // $250.00
         CategoryBudget(SpendingCategory.SAVINGS, 30000L),          // $300.00
         CategoryBudget(SpendingCategory.OTHER, 15000L)             // $150.00
@@ -713,44 +699,45 @@ class InMemoryWalletRepository : WalletRepository {
     private val defaultSplitBills = listOf(
         SplitBill(
             id = "split_001",
-            title = "Team Dinner & Drinks 🍕",
+            title = "Friday Sushi Dinner 🍣",
             category = SplitBillCategory.DINING,
-            totalAmountCents = 14000L, // $140.00
+            totalAmountCents = 12000L, // $120.00
             createdAtMillis = System.currentTimeMillis() - 2 * 3600 * 1000L,
-            note = "Dinner split share 🍕",
+            note = "Total: $120.00 • Your share: $30.00",
             participants = listOf(
                 SplitParticipant(
                     participantId = "usr_demo_001",
-                    name = "Alex Morgan (You)",
-                    phoneNumber = "+1 (555) 234-5678",
-                    avatarInitials = "AM",
-                    amountCents = 3500L,
+                    name = "Kantumruy Dev (You)",
+                    phoneNumber = "+1 (555) 019-8810",
+                    avatarInitials = "KD",
+                    amountCents = 3000L,
                     isPaid = true,
                     isHost = true
                 ),
                 SplitParticipant(
                     participantId = "usr_demo_002",
-                    name = "Sarah Chen",
+                    name = "Sarah",
                     phoneNumber = "+1 (555) 104-5521",
                     avatarInitials = "SC",
-                    amountCents = 3500L,
+                    amountCents = 3000L,
                     isPaid = true,
                     paidAtMillis = System.currentTimeMillis() - 3600 * 1000L
                 ),
                 SplitParticipant(
-                    participantId = "usr_demo_003",
-                    name = "David Miller",
-                    phoneNumber = "+1 (555) 339-8810",
-                    avatarInitials = "DM",
-                    amountCents = 3500L,
-                    isPaid = false
+                    participantId = "usr_demo_004",
+                    name = "Alex",
+                    phoneNumber = "+1 (555) 771-4490",
+                    avatarInitials = "AV",
+                    amountCents = 3000L,
+                    isPaid = true,
+                    paidAtMillis = System.currentTimeMillis() - 2 * 3600 * 1000L
                 ),
                 SplitParticipant(
-                    participantId = "usr_demo_004",
-                    name = "Emma Watson",
-                    phoneNumber = "+1 (555) 771-4490",
-                    avatarInitials = "EW",
-                    amountCents = 3500L,
+                    participantId = "usr_demo_005",
+                    name = "Emily",
+                    phoneNumber = "+1 (555) 448-1983",
+                    avatarInitials = "ER",
+                    amountCents = 3000L,
                     isPaid = false
                 )
             ),
@@ -758,36 +745,36 @@ class InMemoryWalletRepository : WalletRepository {
         ),
         SplitBill(
             id = "split_002",
-            title = "Weekend Cabin Getaway 🏕️",
-            category = SplitBillCategory.TRIP,
-            totalAmountCents = 18000L, // $180.00
+            title = "Apartment Internet & Wifi 🌐",
+            category = SplitBillCategory.HOUSEHOLD,
+            totalAmountCents = 6000L, // $60.00
             createdAtMillis = System.currentTimeMillis() - 4 * 24 * 3600 * 1000L,
-            note = "Cabin rental share",
+            note = "Status: All Paid",
             participants = listOf(
                 SplitParticipant(
                     participantId = "usr_demo_001",
-                    name = "Alex Morgan (You)",
-                    phoneNumber = "+1 (555) 234-5678",
-                    avatarInitials = "AM",
-                    amountCents = 6000L,
+                    name = "Kantumruy Dev (You)",
+                    phoneNumber = "+1 (555) 019-8810",
+                    avatarInitials = "KD",
+                    amountCents = 2000L,
                     isPaid = true,
                     isHost = true
                 ),
                 SplitParticipant(
                     participantId = "usr_demo_002",
-                    name = "Sarah Chen",
+                    name = "Sarah",
                     phoneNumber = "+1 (555) 104-5521",
                     avatarInitials = "SC",
-                    amountCents = 6000L,
+                    amountCents = 2000L,
                     isPaid = true,
                     paidAtMillis = System.currentTimeMillis() - 3 * 24 * 3600 * 1000L
                 ),
                 SplitParticipant(
-                    participantId = "usr_demo_005",
-                    name = "John Doe",
-                    phoneNumber = "+1 (555) 448-1983",
-                    avatarInitials = "JD",
-                    amountCents = 6000L,
+                    participantId = "usr_demo_003",
+                    name = "David",
+                    phoneNumber = "+1 (555) 339-8810",
+                    avatarInitials = "DM",
+                    amountCents = 2000L,
                     isPaid = true,
                     paidAtMillis = System.currentTimeMillis() - 2 * 24 * 3600 * 1000L
                 )

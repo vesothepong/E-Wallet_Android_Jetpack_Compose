@@ -35,31 +35,25 @@ class DashboardBusinessLogicTest {
     fun testInitialWalletBalanceDerivedFromDataSource() {
         val state = viewModel.uiState.value
 
-        // Check wallet balance matches in-memory source ($2,450.00 = 245,000 cents)
-        assertEquals(245000L, state.wallet?.currentBalance)
-        assertEquals(245000L, state.wallet?.availableBalance)
+        // Check wallet balance matches in-memory source ($12,450.80 = 1,245,080 cents)
+        assertEquals(1245080L, state.wallet?.currentBalance)
+        assertEquals(1245080L, state.wallet?.availableBalance)
         assertEquals("USD", state.wallet?.currency)
-        assertEquals("PKP-8829-4102", state.wallet?.walletNumber)
+        assertEquals("PKP-8821-4402", state.wallet?.walletNumber)
     }
 
     @Test
     fun testDerivedTotalsMatchUnderlyingTransactions() {
         val state = viewModel.uiState.value
 
-        // Total received: $150.00 + $80.00 = $230.00 (23,000 cents)
-        assertEquals(23000L, state.totalReceivedCents)
+        // Total received: $4,250.00 + $20.00 = $4,270.00 (427,000 cents)
+        assertEquals(427000L, state.totalReceivedCents)
 
-        // Total sent (SEND + QR): $45.00 + $8.50 + $25.00 = $78.50 (7,850 cents)
-        assertEquals(7850L, state.totalSentCents)
-
-        // Total deposit: $500.00 (50,000 cents)
-        assertEquals(50000L, state.totalDepositCents)
-
-        // Total withdraw: $100.00 (10,000 cents)
-        assertEquals(10000L, state.totalWithdrawCents)
+        // Total sent (SEND + QR + BILL): $799.00 + $8.50 + $42.50 = $850.00 (85,000 cents)
+        assertEquals(85000L, state.totalSentCents)
 
         // Settled transactions count
-        assertEquals(7, state.completedTransactionCount)
+        assertEquals(5, state.completedTransactionCount)
     }
 
     @Test
@@ -84,7 +78,7 @@ class DashboardBusinessLogicTest {
         // Filter by SEND
         viewModel.setTransactionFilter(TransactionFilter.SEND)
         val sendFiltered = viewModel.uiState.value.filteredTransactions
-        assertTrue(sendFiltered.all { it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT })
+        assertTrue(sendFiltered.all { it.type == TransactionType.SEND || it.type == TransactionType.QR_PAYMENT || it.type == TransactionType.BILL_PAYMENT })
         assertEquals(3, sendFiltered.size)
 
         // Filter by RECEIVE
@@ -93,21 +87,9 @@ class DashboardBusinessLogicTest {
         assertTrue(receiveFiltered.all { it.type == TransactionType.RECEIVE })
         assertEquals(2, receiveFiltered.size)
 
-        // Filter by DEPOSIT
-        viewModel.setTransactionFilter(TransactionFilter.DEPOSIT)
-        val depositFiltered = viewModel.uiState.value.filteredTransactions
-        assertTrue(depositFiltered.all { it.type == TransactionType.DEPOSIT })
-        assertEquals(1, depositFiltered.size)
-
-        // Filter by WITHDRAW
-        viewModel.setTransactionFilter(TransactionFilter.WITHDRAW)
-        val withdrawFiltered = viewModel.uiState.value.filteredTransactions
-        assertTrue(withdrawFiltered.all { it.type == TransactionType.WITHDRAW })
-        assertEquals(1, withdrawFiltered.size)
-
         // Filter by ALL
         viewModel.setTransactionFilter(TransactionFilter.ALL)
-        assertEquals(7, viewModel.uiState.value.filteredTransactions.size)
+        assertEquals(5, viewModel.uiState.value.filteredTransactions.size)
     }
 
     @Test

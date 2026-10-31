@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,11 +28,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,8 +41,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,37 +50,55 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.e_wallet.model.User
+import com.example.e_wallet.ui.components.BottomNavTab
+import com.example.e_wallet.ui.components.PocketPayBottomBar
 import com.example.e_wallet.ui.components.PocketPayIcons
 import com.example.e_wallet.ui.theme.ExpenseRose
 import com.example.e_wallet.ui.theme.PrimaryBlue
-import com.example.e_wallet.ui.theme.SecondaryTeal
+import com.example.e_wallet.ui.theme.PurpleAccentDark
 import com.example.e_wallet.ui.theme.SuccessGreen
-import com.example.e_wallet.ui.theme.WalletCardGradientEnd
-import com.example.e_wallet.ui.theme.WalletCardGradientStart
 import com.example.e_wallet.ui.theme.WarningAmber
-import com.example.e_wallet.util.Formatters
 
+/**
+ * Screen 22: Profile & Security Settings (Tab 4)
+ * Matches Image 26 and specifications:
+ * - Header Profile Card:
+ *   - Purple avatar circle "K" with verified green check badge
+ *   - Name "Kantumruy Dev" (18px bold)
+ *   - Email "kantumruy.dev@pocketpay.io"
+ *   - Tier badge: "KYC Verified • Tier 2 Account"
+ * - Menu Sections (White card groups with arrow icons):
+ *   - Group 1 — Account & Security:
+ *     - Change 4-Digit Security PIN
+ *     - Biometric Authentication (switch - ON)
+ *     - Two-Factor Authentication (2FA) (Active)
+ *   - Group 2 — Preferences:
+ *     - Currency Selector ("USD ($)" pill badge)
+ *     - App Theme ("Light" / "Dark" toggle)
+ *     - Push Notifications (switch - ON)
+ *   - Group 3 — Support & Legal:
+ *     - Help Center & 24/7 Live Chat
+ *     - Privacy Policy & Terms
+ * - Red Logout Button: "Log Out of PocketPay" with exit icon
+ * - Bottom navigation bar with "Profile" tab active
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onBackClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    onTabSelected: (BottomNavTab) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isDarkTheme by viewModel.repository.isDarkTheme.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    @Suppress("DEPRECATION")
-    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let { msg ->
@@ -91,109 +108,261 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Profile & Settings",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = PocketPayIcons.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            PocketPayBottomBar(
+                currentTab = BottomNavTab.PROFILE,
+                onTabSelected = onTabSelected
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // 1. User Header & Profile Overview
-            UserProfileCard(
-                user = uiState.user,
-                kycTier = uiState.kycTier,
-                onEditClick = viewModel::openEditProfileDialog,
-                onCopyUserId = {
-                    clipboardManager.setText(AnnotatedString(uiState.user.userId))
+            // Header: Title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = PocketPayIcons.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
-            )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Profile & Settings",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
 
-            // 2. Virtual PocketPay Debit Card
-            VirtualDebitCardSection(
-                cardholderName = uiState.user.fullName,
-                isFrozen = uiState.isCardFrozen,
-                isRevealed = uiState.isCardDetailsRevealed,
-                onToggleReveal = viewModel::toggleRevealCardDetails,
-                onToggleFreeze = viewModel::toggleCardFreeze
-            )
+            // Header Profile Card
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                ),
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        Surface(
+                            shape = CircleShape,
+                            color = PurpleAccentDark,
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "K",
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
+                            }
+                        }
 
-            // 3. Limits & Verification Progress
-            AccountLimitsSection(
-                dailyUsedCents = uiState.dailyUsedCents,
-                dailyLimitCents = uiState.dailyLimitCents,
-                singleLimitCents = uiState.singleLimitCents
-            )
+                        // Verified Green Check Badge
+                        Surface(
+                            shape = CircleShape,
+                            color = SuccessGreen,
+                            border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
+                            modifier = Modifier.size(22.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = PocketPayIcons.Check,
+                                    contentDescription = "Verified",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
+                    }
 
-            // 4. Linked Payment Accounts
-            LinkedAccountsSection(
-                accounts = uiState.linkedBankAccounts
-            )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-            // 5. Security Center
-            SecuritySection(
-                currentPin = uiState.currentPin,
-                isBiometricsEnabled = uiState.isBiometricsEnabled,
-                onChangePinClick = viewModel::openChangePinSheet,
-                onToggleBiometrics = viewModel::setBiometricsEnabled
-            )
+                    Text(
+                        text = uiState.user.fullName,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-            // 6. Preferences (Currency, Notifications)
-            PreferencesSection(
-                selectedCurrency = uiState.selectedCurrency,
-                isNotificationsEnabled = uiState.isNotificationsEnabled,
-                onCurrencySelected = viewModel::setCurrency,
-                onToggleNotifications = viewModel::setNotificationsEnabled
-            )
+                    Spacer(modifier = Modifier.height(2.dp))
 
-            // 7. System Actions
-            SystemActionsSection(
-                onResetDemoClick = viewModel::resetDemoData,
-                onLogoutClick = viewModel::openLogoutDialog
-            )
+                    Text(
+                        text = uiState.user.email,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+                    Spacer(modifier = Modifier.height(10.dp))
 
-        // Edit Profile Dialog
-        if (uiState.showEditProfileDialog) {
-            EditProfileDialog(
-                name = uiState.editNameInput,
-                email = uiState.editEmailInput,
-                phone = uiState.editPhoneInput,
-                error = uiState.editProfileError,
-                onNameChange = viewModel::onEditNameChanged,
-                onEmailChange = viewModel::onEditEmailChanged,
-                onPhoneChange = viewModel::onEditPhoneChanged,
-                onDismiss = viewModel::dismissEditProfileDialog,
-                onSave = viewModel::saveProfile
-            )
+                    // Tier Badge: KYC Verified • Tier 2 Account
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = SuccessGreen.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "KYC Verified • Tier 2 Account",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SuccessGreen,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            // Group 1 — Account & Security
+            SettingsGroup(title = "Account & Security") {
+                SettingsItemRow(
+                    title = "Change 4-Digit Security PIN",
+                    icon = PocketPayIcons.Lock,
+                    onClick = viewModel::openChangePinSheet
+                )
+                SettingsDivider()
+                SettingsToggleRow(
+                    title = "Biometric Authentication",
+                    subtitle = "Fingerprint / Face ID unlock",
+                    icon = PocketPayIcons.Fingerprint,
+                    checked = uiState.isBiometricsEnabled,
+                    onCheckedChange = viewModel::setBiometricsEnabled
+                )
+                SettingsDivider()
+                SettingsItemRow(
+                    title = "Two-Factor Authentication (2FA)",
+                    icon = PocketPayIcons.Shield,
+                    trailingContent = {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = SuccessGreen.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = "Active",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    },
+                    onClick = {
+                        viewModel.clearSnackbar()
+                    }
+                )
+            }
+
+            // Group 2 — Preferences
+            SettingsGroup(title = "App Preferences") {
+                SettingsItemRow(
+                    title = "Currency",
+                    icon = PocketPayIcons.AttachMoney,
+                    trailingContent = {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = PrimaryBlue.copy(alpha = 0.1f)
+                        ) {
+                            Text(
+                                text = "USD ($)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryBlue,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    },
+                    onClick = {
+                        viewModel.setCurrency(if (uiState.selectedCurrency == "USD") "EUR" else "USD")
+                    }
+                )
+                SettingsDivider()
+                SettingsToggleRow(
+                    title = "App Theme",
+                    subtitle = if (isDarkTheme) "Dark Mode" else "Light Mode",
+                    icon = if (isDarkTheme) PocketPayIcons.DarkMode else PocketPayIcons.Sun,
+                    checked = isDarkTheme,
+                    onCheckedChange = { viewModel.repository.toggleDarkTheme() }
+                )
+                SettingsDivider()
+                SettingsToggleRow(
+                    title = "Push Notifications",
+                    subtitle = "Instant transaction updates",
+                    icon = PocketPayIcons.Notifications,
+                    checked = uiState.isNotificationsEnabled,
+                    onCheckedChange = viewModel::setNotificationsEnabled
+                )
+            }
+
+            // Group 3 — Support & Legal
+            SettingsGroup(title = "Support & Legal") {
+                SettingsItemRow(
+                    title = "Help Center & 24/7 Live Chat",
+                    icon = PocketPayIcons.Help,
+                    onClick = {}
+                )
+                SettingsDivider()
+                SettingsItemRow(
+                    title = "Privacy Policy & Terms",
+                    icon = PocketPayIcons.Description,
+                    onClick = {}
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Red Logout Button
+            Button(
+                onClick = viewModel::openLogoutDialog,
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ExpenseRose.copy(alpha = 0.1f),
+                    contentColor = ExpenseRose
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseRose.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = PocketPayIcons.Logout,
+                        contentDescription = "Log Out",
+                        tint = ExpenseRose,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Log Out of PocketPay",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ExpenseRose
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
         // Change PIN BottomSheet
@@ -224,893 +393,170 @@ fun ProfileScreen(
     }
 }
 
-// ---------------------------------------------------------------------------
-// 1. User Profile Card
-// ---------------------------------------------------------------------------
 @Composable
-private fun UserProfileCard(
-    user: User,
-    kycTier: String,
-    onEditClick: () -> Unit,
-    onCopyUserId: () -> Unit
+private fun SettingsGroup(
+    title: String,
+    content: @Composable () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Avatar Initials Circle
-                val initials = user.fullName.split(" ")
-                    .mapNotNull { it.firstOrNull()?.toString() }
-                    .take(2)
-                    .joinToString("")
-                    .ifEmpty { "U" }
-
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(PrimaryBlue, SecondaryTeal)
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = initials,
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = user.fullName,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = user.email,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Text(
-                        text = user.phoneNumber,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = PrimaryBlue.copy(alpha = 0.1f),
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .clickable(onClick = onEditClick)
-                ) {
-                    Box(
-                        modifier = Modifier.padding(10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = PocketPayIcons.Edit,
-                            contentDescription = "Edit Profile",
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // User ID & Verification Badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable(onClick = onCopyUserId)
-                ) {
-                    Text(
-                        text = "ID: ${user.userId}",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = PocketPayIcons.ContentCopy,
-                        contentDescription = "Copy User ID",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = SuccessGreen.copy(alpha = 0.12f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(SuccessGreen)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = kycTier,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = SuccessGreen
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 2. Virtual Debit Card Section
-// ---------------------------------------------------------------------------
-@Composable
-private fun VirtualDebitCardSection(
-    cardholderName: String,
-    isFrozen: Boolean,
-    isRevealed: Boolean,
-    onToggleReveal: () -> Unit,
-    onToggleFreeze: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "PocketPay Digital Card",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            TextButton(onClick = onToggleReveal) {
-                Icon(
-                    imageVector = if (isRevealed) PocketPayIcons.VisibilityOff else PocketPayIcons.Visibility,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = PrimaryBlue
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = if (isRevealed) "Hide Details" else "Show Details",
-                    fontSize = 12.sp,
-                    color = PrimaryBlue,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    Column {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Box(
-                modifier = Modifier
-                    .background(
-                        Brush.linearGradient(
-                            colors = if (isFrozen) {
-                                listOf(Color(0xFF475569), Color(0xFF1E293B))
-                            } else {
-                                listOf(WalletCardGradientStart, WalletCardGradientEnd)
-                            }
-                        )
-                    )
-                    .padding(18.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "PocketPay Virtual",
-                            color = Color.White.copy(alpha = 0.85f),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        if (isFrozen) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = ExpenseRose
-                            ) {
-                                Text(
-                                    text = "FROZEN",
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        } else {
-                            Text(
-                                text = "VISA",
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    // Card Number
-                    Text(
-                        text = if (isRevealed) "4812  9012  3456  9924" else "••••  ••••  ••••  9924",
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "CARDHOLDER",
-                                color = Color.White.copy(alpha = 0.65f),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = cardholderName.uppercase(),
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "EXPIRES / CVC",
-                                color = Color.White.copy(alpha = 0.65f),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (isRevealed) "08/29 • 742" else "08/29 • •••",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                }
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                content()
             }
-        }
-
-        // Freeze Card Button
-        OutlinedButton(
-            onClick = onToggleFreeze,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                imageVector = PocketPayIcons.Lock,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = if (isFrozen) SuccessGreen else ExpenseRose
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isFrozen) "Unfreeze PocketPay Card" else "Freeze Card (Block Payments)",
-                color = if (isFrozen) SuccessGreen else ExpenseRose,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp
-            )
         }
     }
 }
 
-// ---------------------------------------------------------------------------
-// 3. Limits & Verification Progress
-// ---------------------------------------------------------------------------
 @Composable
-private fun AccountLimitsSection(
-    dailyUsedCents: Long,
-    dailyLimitCents: Long,
-    singleLimitCents: Long
+private fun SettingsDivider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+        thickness = 1.dp
+    )
+}
+
+@Composable
+private fun SettingsItemRow(
+    title: String,
+    icon: ImageVector,
+    trailingContent: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(14.dp))
             Text(
-                text = "Account Limits & Capacity",
+                text = title,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
+        }
 
-            val usedRatio = (dailyUsedCents.toFloat() / dailyLimitCents.toFloat()).coerceIn(0f, 1f)
+        if (trailingContent != null) {
+            trailingContent()
+            Spacer(modifier = Modifier.width(8.dp))
+        }
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Daily Transfer Limit",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${Formatters.formatCentsToCurrency(dailyUsedCents)} / ${Formatters.formatCentsToCurrency(dailyLimitCents)}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+        Icon(
+            imageVector = PocketPayIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
 
-                LinearProgressIndicator(
-                    progress = { usedRatio },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
-                    color = PrimaryBlue,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+@Composable
+private fun SettingsToggleRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(14.dp))
+            Column {
                 Text(
-                    text = "Single Transaction Limit",
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = Formatters.formatCentsToCurrency(singleLimitCents),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
             }
         }
-    }
-}
 
-// ---------------------------------------------------------------------------
-// 4. Linked Accounts Section
-// ---------------------------------------------------------------------------
-@Composable
-private fun LinkedAccountsSection(
-    accounts: List<LinkedBank>
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Linked Payment Accounts",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = PrimaryBlue
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            if (accounts.isEmpty()) {
-                Text(
-                    text = "No linked bank accounts yet. Link an account via My Wallet.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            } else {
-                accounts.forEachIndexed { index, bank ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = CircleShape,
-                                color = PrimaryBlue.copy(alpha = 0.1f),
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = PocketPayIcons.AccountBalance,
-                                        contentDescription = null,
-                                        tint = PrimaryBlue,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column {
-                                Text(
-                                    text = bank.bankName,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = bank.accountNumberMasked,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        if (bank.isPrimary) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = PrimaryBlue.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = "PRIMARY",
-                                    color = PrimaryBlue,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    if (index < accounts.lastIndex) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                    }
-                }
-            }
-        }
+        )
     }
 }
 
-// ---------------------------------------------------------------------------
-// 5. Security Section
-// ---------------------------------------------------------------------------
 @Composable
-private fun SecuritySection(
-    currentPin: String,
-    isBiometricsEnabled: Boolean,
-    onChangePinClick: () -> Unit,
-    onToggleBiometrics: (Boolean) -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Security & Authentication",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Change PIN Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onChangePinClick)
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = CircleShape,
-                        color = PrimaryBlue.copy(alpha = 0.1f),
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = PocketPayIcons.Lock,
-                                contentDescription = null,
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column {
-                        Text(
-                            text = "Security PIN",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Change 4-digit transfer PIN •••• (Active)",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Icon(
-                    imageVector = PocketPayIcons.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Biometrics Toggle Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = CircleShape,
-                        color = PrimaryBlue.copy(alpha = 0.1f),
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = PocketPayIcons.Shield,
-                                contentDescription = null,
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column {
-                        Text(
-                            text = "Biometric Login",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Face ID / Fingerprint simulation",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Switch(
-                    checked = isBiometricsEnabled,
-                    onCheckedChange = onToggleBiometrics,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = PrimaryBlue
-                    )
-                )
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 6. Preferences Section
-// ---------------------------------------------------------------------------
-@Composable
-private fun PreferencesSection(
-    selectedCurrency: String,
-    isNotificationsEnabled: Boolean,
-    onCurrencySelected: (String) -> Unit,
-    onToggleNotifications: (Boolean) -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Preferences",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Currency Selector
-            Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                Text(
-                    text = "Display Currency",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("USD" to "$", "EUR" to "€", "GBP" to "£", "KHR" to "៛").forEach { (code, sym) ->
-                        val isSelected = selectedCurrency == code
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) PrimaryBlue else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onCurrencySelected(code) }
-                        ) {
-                            Text(
-                                text = "$sym $code",
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Notifications Toggle Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = CircleShape,
-                        color = WarningAmber.copy(alpha = 0.1f),
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = PocketPayIcons.Notifications,
-                                contentDescription = null,
-                                tint = WarningAmber,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column {
-                        Text(
-                            text = "Push Notifications",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Transaction & transfer alerts",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Switch(
-                    checked = isNotificationsEnabled,
-                    onCheckedChange = onToggleNotifications,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = PrimaryBlue
-                    )
-                )
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 7. System & Logout Section
-// ---------------------------------------------------------------------------
-@Composable
-private fun SystemActionsSection(
-    onResetDemoClick: () -> Unit,
-    onLogoutClick: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Account & System",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Reset Demo Data
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onResetDemoClick)
-                    .padding(vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = PocketPayIcons.Refresh,
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = "Reset Demo Ledger",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Restore initial balances, PIN and history",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Logout Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onLogoutClick)
-                    .padding(vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = PocketPayIcons.Logout,
-                    contentDescription = null,
-                    tint = ExpenseRose,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = "Sign Out",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ExpenseRose
-                    )
-                    Text(
-                        text = "End current simulated session",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Dialog: Edit Profile
-// ---------------------------------------------------------------------------
-@Composable
-private fun EditProfileDialog(
-    name: String,
-    email: String,
-    phone: String,
-    error: String?,
-    onNameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onPhoneChange: (String) -> Unit,
-    onDismiss: () -> Unit,
-    onSave: () -> Unit
+private fun LogoutDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Edit Profile",
+                text = "Log Out",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = { Text("Full Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = onEmailChange,
-                    label = { Text("Email Address") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = onPhoneChange,
-                    label = { Text("Phone Number") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                if (error != null) {
-                    Text(
-                        text = error,
-                        color = ExpenseRose,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+            Text(
+                text = "Are you sure you want to log out of PocketPay?",
+                fontSize = 14.sp
+            )
         },
         confirmButton = {
             Button(
-                onClick = onSave,
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = ExpenseRose)
             ) {
-                Text("Save Changes")
+                Text("Log Out")
             }
         },
         dismissButton = {
@@ -1121,9 +567,6 @@ private fun EditProfileDialog(
     )
 }
 
-// ---------------------------------------------------------------------------
-// BottomSheet: Change PIN Flow
-// ---------------------------------------------------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChangePinBottomSheet(
@@ -1139,188 +582,98 @@ private fun ChangePinBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val (title, currentInput) = when (step) {
+        ChangePinStep.OLD_PIN -> "Enter Current 4-Digit PIN" to oldPin
+        ChangePinStep.NEW_PIN -> "Enter New 4-Digit PIN" to newPin
+        ChangePinStep.CONFIRM_PIN -> "Confirm New 4-Digit PIN" to confirmPin
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val stepTitle = when (step) {
-                ChangePinStep.OLD_PIN -> "Step 1: Enter Current PIN"
-                ChangePinStep.NEW_PIN -> "Step 2: Enter New 4-Digit PIN"
-                ChangePinStep.CONFIRM_PIN -> "Step 3: Confirm New PIN"
-            }
-
-            val currentInput = when (step) {
-                ChangePinStep.OLD_PIN -> oldPin
-                ChangePinStep.NEW_PIN -> newPin
-                ChangePinStep.CONFIRM_PIN -> confirmPin
-            }
-
             Text(
-                text = stepTitle,
+                text = title,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = if (step == ChangePinStep.OLD_PIN) "Current demo PIN is $demoPin" else "Enter 4 digits",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             Spacer(modifier = Modifier.height(20.dp))
 
             // 4 Dots
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(4) { index ->
-                    val isFilled = index < currentInput.length
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isFilled) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant
-                            )
-                    )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                for (i in 0 until 4) {
+                    val isFilled = i < currentInput.length
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isFilled) PrimaryBlue else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(16.dp)
+                    ) {}
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Error Text
             if (pinError != null) {
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = pinError,
-                    color = ExpenseRose,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center
+                    color = ExpenseRose,
+                    fontWeight = FontWeight.SemiBold
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-            } else {
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Custom 3x4 Keypad
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Keypad
             val keys = listOf(
                 listOf("1", "2", "3"),
                 listOf("4", "5", "6"),
                 listOf("7", "8", "9"),
-                listOf("", "0", "DEL")
+                listOf("", "0", "⌫")
             )
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth(0.85f)
-            ) {
-                keys.forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        row.forEach { key ->
-                            when (key) {
-                                "" -> {
-                                    Spacer(modifier = Modifier.size(60.dp))
-                                }
-                                "DEL" -> {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        modifier = Modifier
-                                            .size(60.dp)
-                                            .clickable(onClick = onBackspace)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = PocketPayIcons.Backspace,
-                                                contentDescription = "Backspace",
-                                                tint = MaterialTheme.colorScheme.onSurface,
-                                                modifier = Modifier.size(22.dp)
-                                            )
-                                        }
+            keys.forEach { rowKeys ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    rowKeys.forEach { key ->
+                        if (key.isEmpty()) {
+                            Spacer(modifier = Modifier.size(64.dp))
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clickable {
+                                        if (key == "⌫") onBackspace() else onDigit(key)
                                     }
-                                }
-                                else -> {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        modifier = Modifier
-                                            .size(60.dp)
-                                            .clickable { onDigit(key) }
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                text = key,
-                                                fontSize = 22.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-                                    }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = key,
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
                             }
                         }
                     }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(10.dp))
             }
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// Dialog: Logout Confirmation
-// ---------------------------------------------------------------------------
-@Composable
-private fun LogoutDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Sign Out",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        },
-        text = {
-            Text(
-                text = "Are you sure you want to sign out? This will end your current demo session.",
-                fontSize = 14.sp
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = ExpenseRose)
-            ) {
-                Text("Sign Out")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }

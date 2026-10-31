@@ -185,21 +185,21 @@ class AnalyticsBusinessLogicTest {
     fun testAnalyticsSummaryCalculation() {
         val summary = repository.getAnalyticsSummary(AnalyticsTimePeriod.ALL_TIME)
 
-        // Income should include tx_1001 ($150) + tx_1002 ($500) + tx_1007 ($80) = $730.00 (73,000 cents)
-        assertEquals(73000L, summary.totalIncomeCents)
+        // Income includes Salary Deposit ($4,250.00) + David Miller ($20.00) = $4,270.00
+        assertEquals(427000L, summary.totalIncomeCents)
 
-        // Outflows should include tx_1003 ($45) + tx_1004 ($8.50) + tx_1005 ($100) + tx_1006 ($25) = $178.50 (17,850 cents)
-        assertEquals(17850L, summary.totalExpenseCents)
+        // Outflows include Apple Store ($799.00) + Starbucks ($8.50) + Water Utility ($42.50) = $850.00
+        assertEquals(85000L, summary.totalExpenseCents)
 
-        // Net cashflow: 73000 - 17850 = 55150 cents
-        assertEquals(55150L, summary.netCashFlowCents)
+        // Net cashflow: 427000 - 85000 = 342000 cents
+        assertEquals(342000L, summary.netCashFlowCents)
         assertTrue(summary.netCashFlowCents > 0L)
 
-        // Savings rate should be around 75%
+        // Savings rate should be around 80%
         assertTrue(summary.savingsRatePercent > 50)
 
-        // Largest single expense is tx_1005 ($100 = 10,000 cents)
-        assertEquals(10000L, summary.largestExpenseCents)
+        // Largest single expense is Apple Store ($799.00 = 79,900 cents)
+        assertEquals(79900L, summary.largestExpenseCents)
 
         // Slices should sum up to totalExpenseCents
         val slicesSum = summary.spendingSlices.sumOf { it.amountCents }
@@ -281,6 +281,6 @@ class AnalyticsBusinessLogicTest {
 
         // Reset demo
         repository.resetDemoData()
-        assertEquals(20000L, repository.categoryBudgets.value.first { it.category == SpendingCategory.FOOD_DINING }.monthlyLimitCents)
+        assertEquals(50000L, repository.categoryBudgets.value.first { it.category == SpendingCategory.FOOD_DINING }.monthlyLimitCents)
     }
 }

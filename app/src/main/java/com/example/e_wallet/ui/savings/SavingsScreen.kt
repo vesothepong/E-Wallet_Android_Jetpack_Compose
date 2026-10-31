@@ -88,7 +88,8 @@ import com.example.e_wallet.util.Formatters
 @Composable
 fun SavingsScreen(
     viewModel: SavingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onTabSelected: (com.example.e_wallet.ui.components.BottomNavTab) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -105,7 +106,7 @@ fun SavingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Savings Vaults",
+                        text = "Savings Goals",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -123,7 +124,7 @@ fun SavingsScreen(
                     IconButton(onClick = viewModel::openCreateGoalDialog) {
                         Icon(
                             imageVector = PocketPayIcons.Add,
-                            contentDescription = "New Vault",
+                            contentDescription = "New Goal",
                             tint = PrimaryBlue
                         )
                     }
@@ -131,6 +132,12 @@ fun SavingsScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
+            )
+        },
+        bottomBar = {
+            com.example.e_wallet.ui.components.PocketPayBottomBar(
+                currentTab = com.example.e_wallet.ui.components.BottomNavTab.HOME,
+                onTabSelected = onTabSelected
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

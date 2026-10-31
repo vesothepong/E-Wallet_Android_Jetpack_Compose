@@ -45,19 +45,19 @@ class SavingsBusinessLogicTest {
         val goals = repository.savingsGoals.value
         assertEquals(3, goals.size)
 
-        val emergencyGoal = goals.first { it.id == "goal_001" }
-        assertEquals("Emergency Safety Net", emergencyGoal.name)
-        assertEquals(500000L, emergencyGoal.targetAmountCents)
-        assertEquals(240000L, emergencyGoal.currentAmountCents)
-        assertEquals(SavingsCategory.EMERGENCY, emergencyGoal.category)
-        assertTrue(emergencyGoal.isLocked)
-        assertEquals(48, emergencyGoal.progressPercent)
-        assertFalse(emergencyGoal.isCompleted)
+        val travelGoal = goals.first { it.id == "goal_001" }
+        assertEquals("Summer Vacation to Bali", travelGoal.name)
+        assertEquals(300000L, travelGoal.targetAmountCents)
+        assertEquals(180000L, travelGoal.currentAmountCents)
+        assertEquals(SavingsCategory.TRAVEL, travelGoal.category)
+        assertFalse(travelGoal.isLocked)
+        assertEquals(60, travelGoal.progressPercent)
+        assertFalse(travelGoal.isCompleted)
     }
 
     @Test
     fun testTotalSavingsBalanceCalculation() {
-        val totalExpected = 240000L + 175000L + 160000L // $5,750.00
+        val totalExpected = 180000L + 240000L + 225000L // $6,450.00
         assertEquals(totalExpected, repository.totalSavingsCents.value)
         assertEquals(totalExpected, viewModel.uiState.value.totalSavedCents)
     }
@@ -154,7 +154,7 @@ class SavingsBusinessLogicTest {
 
         assertTrue(result is SavingsGoalResult.Success)
         val success = result as SavingsGoalResult.Success
-        assertEquals(175000L + depositAmount, success.goal.currentAmountCents)
+        assertEquals(240000L + depositAmount, success.goal.currentAmountCents)
         assertEquals(initialWalletBalance - depositAmount, repository.currentWallet.value.currentBalance)
 
         // Check transaction recorded
@@ -192,7 +192,7 @@ class SavingsBusinessLogicTest {
 
         assertTrue(result is SavingsGoalResult.Success)
         val success = result as SavingsGoalResult.Success
-        assertEquals(175000L - withdrawAmount, success.goal.currentAmountCents)
+        assertEquals(240000L - withdrawAmount, success.goal.currentAmountCents)
         assertEquals(initialWalletBalance + withdrawAmount, repository.currentWallet.value.currentBalance)
 
         // Check transaction recorded
@@ -218,8 +218,8 @@ class SavingsBusinessLogicTest {
 
     @Test
     fun testWithdrawFromLockedGoalBlockedUntilTargetMet() = runBlocking {
-        // goal_001 is locked and saved $2,400 / target $5,000 (target not met)
-        val lockedGoal = repository.savingsGoals.value.first { it.id == "goal_001" }
+        // goal_003 is locked and saved $2,250 / target $5,000 (target not met)
+        val lockedGoal = repository.savingsGoals.value.first { it.id == "goal_003" }
         assertTrue(lockedGoal.isLocked)
         assertFalse(lockedGoal.isCompleted)
 
@@ -308,9 +308,9 @@ class SavingsBusinessLogicTest {
         viewModel.setFilter(SavingsGoalFilter.COMPLETED)
         assertEquals(0, viewModel.uiState.value.filteredGoals.size)
 
-        // LOCKED (goal_001 is locked)
+        // LOCKED (goal_003 is locked)
         viewModel.setFilter(SavingsGoalFilter.LOCKED)
         assertEquals(1, viewModel.uiState.value.filteredGoals.size)
-        assertEquals("goal_001", viewModel.uiState.value.filteredGoals.first().id)
+        assertEquals("goal_003", viewModel.uiState.value.filteredGoals.first().id)
     }
 }

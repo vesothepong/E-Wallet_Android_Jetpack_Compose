@@ -1,6 +1,8 @@
 package com.example.e_wallet.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,20 +18,31 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.e_wallet.ui.home.HomeQuickAction
-import com.example.e_wallet.ui.theme.ExpenseRose
+import com.example.e_wallet.ui.theme.LightTextPrimary
 import com.example.e_wallet.ui.theme.PrimaryBlue
-import com.example.e_wallet.ui.theme.SecondaryTeal
+import com.example.e_wallet.ui.theme.PurpleAccent
 import com.example.e_wallet.ui.theme.SuccessGreen
+import com.example.e_wallet.ui.theme.WarningAmber
 
+/**
+ * Screen 4: 4-Icon Quick Actions
+ * Auto-Layout horizontal row with 4 vibrant squircle buttons:
+ * 1. Send: Indigo (#4F46E5) + Paper Plane
+ * 2. Receive: Emerald Green (#10B981) + QR Code
+ * 3. Scan & Pay: Warm Amber (#F59E0B) + Viewfinder
+ * 4. Top Up: Vivid Purple (#8B5CF6) + Wallet
+ */
 @Composable
 fun QuickActionsSection(
     onActionClick: (HomeQuickAction) -> Unit,
@@ -38,82 +51,92 @@ fun QuickActionsSection(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        QuickActionButton(
+        // 1. Send
+        QuickActionSquircle(
             label = "Send",
-            icon = PocketPayIcons.ArrowUp,
-            iconTint = PrimaryBlue,
-            containerColor = PrimaryBlue.copy(alpha = 0.12f),
+            icon = PocketPayIcons.Send,
+            backgroundColor = PrimaryBlue,
             onClick = { onActionClick(HomeQuickAction.SEND) }
         )
 
-        QuickActionButton(
+        // 2. Receive
+        QuickActionSquircle(
             label = "Receive",
-            icon = PocketPayIcons.ArrowDown,
-            iconTint = SuccessGreen,
-            containerColor = SuccessGreen.copy(alpha = 0.12f),
+            icon = PocketPayIcons.QrCode,
+            backgroundColor = SuccessGreen,
             onClick = { onActionClick(HomeQuickAction.RECEIVE) }
         )
 
-        QuickActionButton(
-            label = "Deposit",
-            icon = PocketPayIcons.Add,
-            iconTint = SecondaryTeal,
-            containerColor = SecondaryTeal.copy(alpha = 0.12f),
-            onClick = { onActionClick(HomeQuickAction.DEPOSIT) }
+        // 3. Scan & Pay
+        QuickActionSquircle(
+            label = "Scan & Pay",
+            icon = PocketPayIcons.CropFree,
+            backgroundColor = WarningAmber,
+            onClick = { onActionClick(HomeQuickAction.SCAN_QR) }
         )
 
-        QuickActionButton(
-            label = "Withdraw",
-            icon = PocketPayIcons.Send,
-            iconTint = ExpenseRose,
-            containerColor = ExpenseRose.copy(alpha = 0.12f),
-            onClick = { onActionClick(HomeQuickAction.WITHDRAW) }
+        // 4. Top Up
+        QuickActionSquircle(
+            label = "Top Up",
+            icon = PocketPayIcons.Wallet,
+            backgroundColor = PurpleAccent,
+            onClick = { onActionClick(HomeQuickAction.DEPOSIT) }
         )
     }
 }
 
 @Composable
-private fun QuickActionButton(
+private fun QuickActionSquircle(
     label: String,
     icon: ImageVector,
-    iconTint: Color,
-    containerColor: Color,
+    backgroundColor: Color,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 4.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = containerColor,
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier
+                .size(58.dp)
+                .shadow(
+                    elevation = 6.dp,
+                    shape = RoundedCornerShape(18.dp),
+                    spotColor = backgroundColor.copy(alpha = 0.35f)
+                ),
+            shape = RoundedCornerShape(18.dp),
+            color = backgroundColor
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.size(58.dp)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    tint = iconTint,
+                    tint = Color.White,
                     modifier = Modifier.size(26.dp)
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(8.dp))
+
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

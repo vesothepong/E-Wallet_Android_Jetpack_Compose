@@ -84,12 +84,13 @@ class WithdrawSimulationTest {
 
     @Test
     fun testWithdrawalWithInsufficientFundsFailsAndLeavesBalanceUnchanged() = runBlocking {
-        // First withdraw $1,500.00 so balance drops to $950.00
-        repository.withdraw(amountCents = 150000L)
+        // Drop balance so it is less than $1,000 (< $2,000 limit)
+        // Withdraw $2,000 6 times = $12,000 debited, leaving $450.80
+        repeat(6) { repository.withdraw(amountCents = 200000L) }
         val balanceAfterFirst = repository.currentWallet.value.currentBalance
         val txCountAfterFirst = repository.transactions.value.size
 
-        // Attempt to withdraw $1,000.00 (< $2,000.00 limit, but > $950.00 available balance)
+        // Attempt to withdraw $1,000.00 (< $2,000.00 limit, but > $450.80 available balance)
         val result = repository.withdraw(amountCents = 100000L)
 
         assertTrue(result is WithdrawResult.Error)
@@ -136,16 +137,12 @@ class WithdrawSimulationTest {
 
     @Test
     fun testFullBalanceWithdrawalLeavesZeroBalanceWithoutUnderflow() = runBlocking {
-        val initialBalance = repository.currentWallet.value.currentBalance
-        // Available balance is $2,450.00, limit is $2,000.00.
-        // Let's set wallet balance to $500.00 first, then withdraw full $500.00
-        val smallBalanceWallet = repository.currentWallet.value.copy(
-            currentBalance = 50000L,
-            availableBalance = 50000L
-        )
-        // Set via reset or withdraw down
-        val withdrawPartial = repository.withdraw(amountCents = initialBalance - 50000L)
-        assertTrue(withdrawPartial is WithdrawResult.Success)
+        // Withdraw down to $500.00 first
+        while (repository.currentWallet.value.currentBalance > 50000L) {
+            val toWithdraw = (repository.currentWallet.value.currentBalance - 50000L).coerceAtMost(200000L)
+            val step = repository.withdraw(amountCents = toWithdraw)
+            assertTrue(step is WithdrawResult.Success)
+        }
         assertEquals(50000L, repository.currentWallet.value.currentBalance)
 
         // Now withdraw remaining full $500.00

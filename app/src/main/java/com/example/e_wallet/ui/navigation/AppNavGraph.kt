@@ -6,10 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.e_wallet.ui.analytics.AnalyticsScreen
+import com.example.e_wallet.ui.auth.KycSignupScreen
 import com.example.e_wallet.ui.auth.LoginScreen
 import com.example.e_wallet.ui.auth.OnboardingScreen
 import com.example.e_wallet.ui.auth.SplashScreen
 import com.example.e_wallet.ui.bills.BillPaymentScreen
+import com.example.e_wallet.ui.components.BottomNavTab
 import com.example.e_wallet.ui.history.TransactionHistoryScreen
 import com.example.e_wallet.ui.home.HomeScreen
 import com.example.e_wallet.ui.notifications.NotificationsScreen
@@ -22,6 +24,7 @@ import com.example.e_wallet.ui.wallet.WalletScreen
 object AppDestinations {
     const val SPLASH = "splash"
     const val ONBOARDING = "onboarding"
+    const val KYC_SIGNUP = "kyc_signup"
     const val LOGIN = "login"
     const val HOME = "home"
     const val TRANSACTION_HISTORY = "transaction_history"
@@ -38,6 +41,25 @@ object AppDestinations {
 fun AppNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
+    fun navigateToTab(tab: BottomNavTab) {
+        when (tab) {
+            BottomNavTab.HOME -> navController.navigate(AppDestinations.HOME) {
+                popUpTo(AppDestinations.HOME) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+            BottomNavTab.TRANSFER -> navController.navigate(AppDestinations.TRANSACTION_HISTORY) {
+                launchSingleTop = true
+            }
+            BottomNavTab.CARDS -> navController.navigate(AppDestinations.WALLET) {
+                launchSingleTop = true
+            }
+            BottomNavTab.PROFILE -> navController.navigate(AppDestinations.PROFILE) {
+                launchSingleTop = true
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = AppDestinations.SPLASH
@@ -65,6 +87,18 @@ fun AppNavGraph(
         composable(AppDestinations.ONBOARDING) {
             OnboardingScreen(
                 onFinishOnboarding = {
+                    navController.navigate(AppDestinations.KYC_SIGNUP)
+                },
+                onNavigateToLogin = {
+                    navController.navigate(AppDestinations.LOGIN)
+                }
+            )
+        }
+
+        composable(AppDestinations.KYC_SIGNUP) {
+            KycSignupScreen(
+                onBackClick = { navController.popBackStack() },
+                onContinue = {
                     navController.navigate(AppDestinations.LOGIN) {
                         popUpTo(AppDestinations.ONBOARDING) { inclusive = true }
                     }
@@ -113,25 +147,29 @@ fun AppNavGraph(
 
         composable(AppDestinations.SPLIT_BILL) {
             SplitBillScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTabSelected = ::navigateToTab
             )
         }
 
         composable(AppDestinations.ANALYTICS) {
             AnalyticsScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTabSelected = ::navigateToTab
             )
         }
 
         composable(AppDestinations.SAVINGS) {
             SavingsScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTabSelected = ::navigateToTab
             )
         }
 
         composable(AppDestinations.TRANSACTION_HISTORY) {
             TransactionHistoryScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTabSelected = ::navigateToTab
             )
         }
 
@@ -142,13 +180,15 @@ fun AppNavGraph(
                     navController.navigate(AppDestinations.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
-                }
+                },
+                onTabSelected = ::navigateToTab
             )
         }
 
         composable(AppDestinations.WALLET) {
             WalletScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTabSelected = ::navigateToTab
             )
         }
 
@@ -160,7 +200,8 @@ fun AppNavGraph(
 
         composable(AppDestinations.BILL_PAYMENT) {
             BillPaymentScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTabSelected = ::navigateToTab
             )
         }
     }

@@ -45,9 +45,9 @@ class ProfileBusinessLogicTest {
     @Test
     fun testInitialProfileStateMatchesRepositoryDefaults() {
         val state = profileViewModel.uiState.value
-        assertEquals("Alex Morgan", state.user.fullName)
-        assertEquals("alex.morgan@pocketpay.demo", state.user.email)
-        assertEquals("+1 (555) 234-5678", state.user.phoneNumber)
+        assertEquals("Kantumruy Dev", state.user.fullName)
+        assertEquals("kantumruy.dev@pocketpay.io", state.user.email)
+        assertEquals("+1 (555) 019-8810", state.user.phoneNumber)
         assertEquals("1234", state.currentPin)
         assertTrue(state.isBiometricsEnabled)
         assertTrue(state.isNotificationsEnabled)
@@ -83,7 +83,7 @@ class ProfileBusinessLogicTest {
         assertTrue(profileViewModel.uiState.value.showEditProfileDialog)
         assertNotNull(profileViewModel.uiState.value.editProfileError)
         // Repository should retain original email
-        assertEquals("alex.morgan@pocketpay.demo", repository.currentUser.value.email)
+        assertEquals("kantumruy.dev@pocketpay.io", repository.currentUser.value.email)
     }
 
     @Test
@@ -200,7 +200,7 @@ class ProfileBusinessLogicTest {
         profileViewModel.resetDemoData()
 
         // Verify restoration
-        assertEquals("Alex Morgan", repository.currentUser.value.fullName)
+        assertEquals("Kantumruy Dev", repository.currentUser.value.fullName)
         assertEquals("1234", repository.currentPin.value)
         assertFalse(repository.isCardFrozen.value)
         assertTrue(repository.isBiometricsEnabled.value)

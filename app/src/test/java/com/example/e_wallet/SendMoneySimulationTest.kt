@@ -94,10 +94,12 @@ class SendMoneySimulationTest {
 
     @Test
     fun testSendMoneyInsufficientFundsFailsWithoutTouchingBalance() = runBlocking {
+        // Drop balance so it is lower than a valid send amount under the max limit
+        repeat(6) { repository.withdraw(amountCents = 200000L) }
         val initialBalance = repository.currentWallet.value.currentBalance
         val initialTxCount = repository.transactions.value.size
 
-        val overBalanceCents = 246000L // $2,460.00 (> $2,450.00 balance, < $2,500.00 limit)
+        val overBalanceCents = 50000L // $500.00 (> $450.80 balance, < $2,500.00 limit)
         val result = repository.sendMoney(
             receiverWalletNumber = "PKP-1049-5521",
             receiverName = "Sarah Chen",

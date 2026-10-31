@@ -63,7 +63,7 @@ class ReceiveQrCodeTest {
         // Default QR string contains base URI
         val initialQr = state.qrData
         assertTrue(initialQr.startsWith("pocketpay://receive?wallet="))
-        assertTrue(initialQr.contains("name=Alex%20Morgan"))
+        assertTrue(initialQr.contains("name=Kantumruy%20Dev"))
         assertFalse(initialQr.contains("&amount="))
 
         // Toggle request amount field on

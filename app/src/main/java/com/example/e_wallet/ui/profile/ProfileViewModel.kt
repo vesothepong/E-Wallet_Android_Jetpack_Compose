@@ -99,7 +99,7 @@ private data class LocalUiState(
 )
 
 class ProfileViewModel(
-    private val repository: WalletRepository = WalletRepositoryProvider.repository,
+    val repository: WalletRepository = WalletRepositoryProvider.repository,
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 

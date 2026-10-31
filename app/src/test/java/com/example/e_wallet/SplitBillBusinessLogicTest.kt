@@ -40,12 +40,12 @@ class SplitBillBusinessLogicTest {
         assertEquals(2, bills.size)
 
         val active = bills.first { it.status == SplitBillStatus.ACTIVE }
-        assertEquals("Team Dinner & Drinks 🍕", active.title)
-        assertEquals(14000L, active.totalAmountCents)
+        assertEquals("Friday Sushi Dinner 🍣", active.title)
+        assertEquals(12000L, active.totalAmountCents)
         assertEquals(4, active.participants.size)
 
         val settled = bills.first { it.status == SplitBillStatus.SETTLED }
-        assertEquals("Weekend Cabin Getaway 🏕️", settled.title)
+        assertEquals("Apartment Internet & Wifi 🌐", settled.title)
         assertTrue(settled.isFullySettled)
     }
 
@@ -81,8 +81,8 @@ class SplitBillBusinessLogicTest {
         val initialBalance = repository.currentWallet.value.availableBalance
         val activeBill = repository.splitBills.value.first { it.id == "split_001" }
 
-        // Participant "usr_demo_003" (David Miller) owes $35.00 (3500 cents)
-        val unpaidParticipant = activeBill.participants.first { it.participantId == "usr_demo_003" }
+        // Participant "usr_demo_005" (Emily) owes $30.00 (3000 cents)
+        val unpaidParticipant = activeBill.participants.first { it.participantId == "usr_demo_005" }
         assertFalse(unpaidParticipant.isPaid)
 
         val success = repository.markParticipantPaid(activeBill.id, unpaidParticipant.participantId)
@@ -94,44 +94,43 @@ class SplitBillBusinessLogicTest {
         assertTrue(updatedParticipant.isPaid)
         assertNotNull(updatedParticipant.paidAtMillis)
 
-        // Verify host wallet balance was credited by exactly $35.00
+        // Verify host wallet balance was credited by exactly $30.00
         val newBalance = repository.currentWallet.value.availableBalance
-        assertEquals(initialBalance + 3500L, newBalance)
+        assertEquals(initialBalance + 3000L, newBalance)
 
         // Verify a new RECEIVE transaction was recorded
         val latestTx = repository.transactions.value.first()
         assertEquals(TransactionType.RECEIVE, latestTx.type)
-        assertEquals(3500L, latestTx.amount)
-        assertTrue(latestTx.description.contains("David Miller"))
+        assertEquals(3000L, latestTx.amount)
+        assertTrue(latestTx.description.contains("Emily"))
     }
 
     @Test
     fun testAllParticipantsPaidTransitionsStatusToSettled() = runBlocking {
         val activeBill = repository.splitBills.value.first { it.id == "split_001" }
 
-        // Settle David Miller (3500) and Emma Watson (3500)
-        repository.markParticipantPaid(activeBill.id, "usr_demo_003")
-        repository.markParticipantPaid(activeBill.id, "usr_demo_004")
+        // Settle Emily (3000)
+        repository.markParticipantPaid(activeBill.id, "usr_demo_005")
 
         val settledBill = repository.splitBills.value.first { it.id == activeBill.id }
         assertTrue(settledBill.isFullySettled)
         assertEquals(SplitBillStatus.SETTLED, settledBill.status)
-        assertEquals(14000L, settledBill.collectedAmountCents)
+        assertEquals(12000L, settledBill.collectedAmountCents)
         assertEquals(0L, settledBill.pendingAmountCents)
     }
 
     @Test
     fun testSendSplitReminderIncrementsCount() = runBlocking {
         val activeBill = repository.splitBills.value.first { it.id == "split_001" }
-        val david = activeBill.participants.first { it.participantId == "usr_demo_003" }
-        assertEquals(0, david.reminderCount)
+        val emily = activeBill.participants.first { it.participantId == "usr_demo_005" }
+        assertEquals(0, emily.reminderCount)
 
-        val success = repository.sendSplitReminder(activeBill.id, david.participantId)
+        val success = repository.sendSplitReminder(activeBill.id, emily.participantId)
         assertTrue(success)
 
         val updatedBill = repository.splitBills.value.first { it.id == activeBill.id }
-        val updatedDavid = updatedBill.participants.first { it.participantId == david.participantId }
-        assertEquals(1, updatedDavid.reminderCount)
+        val updatedEmily = updatedBill.participants.first { it.participantId == emily.participantId }
+        assertEquals(1, updatedEmily.reminderCount)
     }
 
     @Test

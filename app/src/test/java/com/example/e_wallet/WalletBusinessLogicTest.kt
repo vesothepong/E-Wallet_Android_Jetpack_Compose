@@ -44,7 +44,7 @@ class WalletBusinessLogicTest {
 
         val primaryCard = state.cards.first()
         assertEquals("crd_001", primaryCard.cardId)
-        assertEquals("Alex Morgan", primaryCard.cardholderName)
+        assertEquals("Kantumruy Dev", primaryCard.cardholderName)
         assertEquals(CardNetwork.VISA, primaryCard.cardNetwork)
         assertEquals(CardType.VIRTUAL_DEBIT, primaryCard.cardType)
         assertTrue(primaryCard.isPrimary)
@@ -52,7 +52,7 @@ class WalletBusinessLogicTest {
         assertTrue(primaryCard.isOnlinePaymentEnabled)
 
         val primaryBank = state.bankAccounts.first()
-        assertEquals("Chase Premier Checking", primaryBank.bankName)
+        assertEquals("Chase Bank Checking", primaryBank.bankName)
         assertTrue(primaryBank.isPrimary)
     }
 

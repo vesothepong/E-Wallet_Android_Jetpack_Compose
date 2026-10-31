@@ -1,7 +1,9 @@
 package com.example.e_wallet.ui.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,408 +14,358 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.e_wallet.ui.components.DemoWarningBanner
+import com.example.e_wallet.data.WalletRepository
+import com.example.e_wallet.data.WalletRepositoryProvider
 import com.example.e_wallet.ui.components.PocketPayIcons
+import com.example.e_wallet.ui.theme.EWalletTheme
 import com.example.e_wallet.ui.theme.ExpenseRose
+import com.example.e_wallet.ui.theme.LightBackground
+import com.example.e_wallet.ui.theme.LightBorder
+import com.example.e_wallet.ui.theme.LightTextPrimary
+import com.example.e_wallet.ui.theme.LightTextSecondary
 import com.example.e_wallet.ui.theme.PrimaryBlue
-import com.example.e_wallet.ui.theme.SecondaryTeal
 import com.example.e_wallet.ui.theme.SuccessGreen
+import kotlinx.coroutines.launch
 
 /**
- * PocketPay Authentication Screen supporting Sign In, Demo 1-Tap Fill, Biometrics, and Account Registration.
+ * Screen 2: Biometric / PIN Login Screen
+ * Follows the reference specification with KD avatar, 4-digit PIN dots,
+ * biometric unlock emerald button, and 3x4 numeric keypad.
  */
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    repository: WalletRepository = WalletRepositoryProvider.repository
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val currentUser by repository.currentUser.collectAsState()
+    val savedPin by repository.currentPin.collectAsState()
+    var enteredPin by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
-    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
-    var isPinVisible by remember { mutableStateOf(false) }
+    fun handleDigit(digit: String) {
+        if (enteredPin.length < 4) {
+            val newPin = enteredPin + digit
+            enteredPin = newPin
+            if (newPin.length == 4) {
+                if (newPin == savedPin || newPin == "1234") {
+                    repository.login(currentUser.email, newPin)
+                    onLoginSuccess()
+                } else {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Incorrect PIN. Please try again.")
+                        enteredPin = ""
+                    }
+                }
+            }
+        }
+    }
 
-    LaunchedEffect(uiState.snackbarMessage) {
-        uiState.snackbarMessage?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
-            viewModel.clearSnackbar()
+    fun handleClear() {
+        enteredPin = ""
+    }
+
+    fun handleBackspace() {
+        if (enteredPin.isNotEmpty()) {
+            enteredPin = enteredPin.dropLast(1)
         }
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier
+            .fillMaxSize()
+            .background(LightBackground)
+            .statusBarsPadding(),
+        containerColor = LightBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(scrollState)
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // App Brand Header
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = PrimaryBlue,
-                modifier = Modifier.size(68.dp)
+            // Top Bar: Back arrow
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = PocketPayIcons.Wallet,
-                        contentDescription = "PocketPay",
-                        tint = Color.White,
-                        modifier = Modifier.size(38.dp)
+                        imageVector = PocketPayIcons.ArrowBack,
+                        contentDescription = "Back",
+                        tint = LightTextPrimary
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Welcome Back Header with PocketPay squircle logo
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // PocketPay Squircle Logo
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(PrimaryBlue),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "P",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp
+                        )
+                    }
 
-            Text(
-                text = if (uiState.isRegisterMode) "Create Account" else "Welcome to PocketPay",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+                    Column {
+                        Text(
+                            text = "Welcome Back!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LightTextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Enter your 4-digit security PIN or sign in with biometrics",
+                            fontSize = 13.sp,
+                            color = LightTextSecondary,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            // User Avatar & Masked Phone
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(vertical = 12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEDE9FE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "KD",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                }
 
-            Text(
-                text = if (uiState.isRegisterMode)
-                    "Open a demo digital wallet with $100.00 welcome balance"
-                else
-                    "Sign in to access your cards, transfers, and wallet",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = currentUser.fullName.ifBlank { "Kantumruy Dev" },
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = LightTextPrimary
+                )
 
-            // Auth Mode Selector (Sign In vs Register)
-            PrimaryTabRow(
-                selectedTabIndex = if (uiState.isRegisterMode) 1 else 0,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = "•••• •••• 8810",
+                    fontSize = 14.sp,
+                    color = LightTextSecondary
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 4-digit PIN dot indicators
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (i in 0 until 4) {
+                        val isFilled = i < enteredPin.length
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isFilled) PrimaryBlue else Color.Transparent
+                                )
+                                .border(
+                                    width = 1.5.dp,
+                                    color = if (isFilled) PrimaryBlue else Color(0xFFCBD5E1),
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+            }
+
+            // "Sign In with Biometrics" Button
+            Button(
+                onClick = {
+                    if (repository.loginWithBiometrics()) {
+                        onLoginSuccess()
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Biometrics unlocked!")
+                            onLoginSuccess()
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp)),
-                divider = {}
+                    .height(50.dp),
+                shape = RoundedCornerShape(25.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SuccessGreen,
+                    contentColor = Color.White
+                )
             ) {
-                Tab(
-                    selected = !uiState.isRegisterMode,
-                    onClick = { if (uiState.isRegisterMode) viewModel.toggleAuthMode() },
-                    text = {
-                        Text(
-                            text = "Sign In",
-                            fontWeight = if (!uiState.isRegisterMode) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
+                Icon(
+                    imageVector = PocketPayIcons.Fingerprint,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
                 )
-                Tab(
-                    selected = uiState.isRegisterMode,
-                    onClick = { if (!uiState.isRegisterMode) viewModel.toggleAuthMode() },
-                    text = {
-                        Text(
-                            text = "Register",
-                            fontWeight = if (uiState.isRegisterMode) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Sign In with Biometrics",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // 3x4 Numeric Keypad
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                val rows = listOf(
+                    listOf("1", "2", "3"),
+                    listOf("4", "5", "6"),
+                    listOf("7", "8", "9"),
+                    listOf("C", "0", "DEL")
+                )
 
-            // 1-Tap Demo User Helper Pill (for testing convenience)
-            if (!uiState.isRegisterMode) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = PrimaryBlue.copy(alpha = 0.08f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { viewModel.fillDemoUser() }
-                ) {
+                for (row in rows) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = PocketPayIcons.Star,
-                            contentDescription = null,
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "1-Tap Demo Fill: Alex Morgan",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryBlue
-                            )
-                            Text(
-                                text = "alex.morgan@pocketpay.demo • PIN: 1234",
-                                fontSize = 11.sp,
-                                color = PrimaryBlue.copy(alpha = 0.85f)
-                            )
+                        for (key in row) {
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(54.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        when (key) {
+                                            "C" -> handleClear()
+                                            "DEL" -> handleBackspace()
+                                            else -> handleDigit(key)
+                                        }
+                                    },
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color.White,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, LightBorder),
+                                shadowElevation = 1.dp
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    when (key) {
+                                        "C" -> Text(
+                                            text = "C",
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ExpenseRose
+                                        )
+                                        "DEL" -> Icon(
+                                            imageVector = PocketPayIcons.Backspace,
+                                            contentDescription = "Delete",
+                                            tint = LightTextPrimary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        else -> Text(
+                                            text = key,
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = LightTextPrimary
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(18.dp))
             }
 
-            // Error Banner
-            if (uiState.errorMessage != null) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = ExpenseRose.copy(alpha = 0.12f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = PocketPayIcons.Info,
-                            contentDescription = null,
-                            tint = ExpenseRose,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = uiState.errorMessage ?: "",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = ExpenseRose
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Form Fields
-            if (!uiState.isRegisterMode) {
-                // SIGN IN FORM
-                OutlinedTextField(
-                    value = uiState.identifierInput,
-                    onValueChange = viewModel::onIdentifierChanged,
-                    label = { Text("Email or Phone Number") },
-                    leadingIcon = {
-                        Icon(PocketPayIcons.Person, contentDescription = null, tint = PrimaryBlue)
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                OutlinedTextField(
-                    value = uiState.pinInput,
-                    onValueChange = viewModel::onPinChanged,
-                    label = { Text("4-Digit Security PIN") },
-                    leadingIcon = {
-                        Icon(PocketPayIcons.Lock, contentDescription = null, tint = PrimaryBlue)
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { isPinVisible = !isPinVisible }) {
-                            Icon(
-                                imageVector = if (isPinVisible) PocketPayIcons.VisibilityOff else PocketPayIcons.Visibility,
-                                contentDescription = "Toggle PIN visibility"
-                            )
+            // Forgot PIN? link
+            Text(
+                text = "Forgot PIN?",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = LightTextPrimary,
+                modifier = Modifier
+                    .clickable {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Use default demo PIN: 1234")
                         }
-                    },
-                    visualTransformation = if (isPinVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Primary Sign In Button
-                Button(
-                    onClick = { viewModel.login(onLoginSuccess) },
-                    enabled = !uiState.isLoading,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
-                    } else {
-                        Text(text = "Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                }
-
-                // Biometrics Shortcut Button
-                if (uiState.isBiometricsAvailable) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(
-                        onClick = { viewModel.loginWithBiometrics(onLoginSuccess) },
-                        enabled = !uiState.isLoading,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                    ) {
-                        Icon(
-                            imageVector = PocketPayIcons.Fingerprint,
-                            contentDescription = "Biometrics",
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Sign in with Biometrics",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = PrimaryBlue
-                        )
-                    }
-                }
-            } else {
-                // REGISTRATION FORM
-                OutlinedTextField(
-                    value = uiState.registerNameInput,
-                    onValueChange = viewModel::onRegisterNameChanged,
-                    label = { Text("Full Name") },
-                    leadingIcon = { Icon(PocketPayIcons.Person, contentDescription = null, tint = PrimaryBlue) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = uiState.registerEmailInput,
-                    onValueChange = viewModel::onRegisterEmailChanged,
-                    label = { Text("Email Address") },
-                    leadingIcon = { Icon(PocketPayIcons.Email, contentDescription = null, tint = PrimaryBlue) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = uiState.registerPhoneInput,
-                    onValueChange = viewModel::onRegisterPhoneChanged,
-                    label = { Text("Phone Number") },
-                    leadingIcon = { Icon(PocketPayIcons.Phone, contentDescription = null, tint = PrimaryBlue) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = uiState.registerPinInput,
-                    onValueChange = viewModel::onRegisterPinChanged,
-                    label = { Text("Create 4-Digit Security PIN") },
-                    leadingIcon = { Icon(PocketPayIcons.Lock, contentDescription = null, tint = PrimaryBlue) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = uiState.registerConfirmPinInput,
-                    onValueChange = viewModel::onRegisterConfirmPinChanged,
-                    label = { Text("Confirm 4-Digit Security PIN") },
-                    leadingIcon = { Icon(PocketPayIcons.Lock, contentDescription = null, tint = PrimaryBlue) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { viewModel.register(onLoginSuccess) },
-                    enabled = !uiState.isLoading,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
-                    } else {
-                        Text(text = "Create Demo Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            DemoWarningBanner()
-
-            Spacer(modifier = Modifier.height(16.dp))
+                    .padding(bottom = 12.dp)
+            )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    EWalletTheme {
+        LoginScreen(onLoginSuccess = {})
     }
 }

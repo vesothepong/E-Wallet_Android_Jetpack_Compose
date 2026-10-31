@@ -365,68 +365,61 @@ private fun PaymentDetailsView(
 
         // Receiver / Merchant Badge Card
         Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            shape = RoundedCornerShape(20.dp),
+            color = PrimaryBlue.copy(alpha = 0.12f),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            Column(
+                modifier = Modifier.padding(18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .size(52.dp)
-                        .background(
-                            if (receiver.isMerchant) SecondaryTeal.copy(alpha = 0.2f) else PrimaryBlue.copy(alpha = 0.2f),
-                            CircleShape
-                        ),
+                        .size(56.dp)
+                        .background(PrimaryBlue.copy(alpha = 0.2f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = receiver.avatarInitials,
-                        fontSize = 18.sp,
+                        text = if (receiver.receiverName.contains("Starbucks", ignoreCase = true)) "SB" else receiver.avatarInitials,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (receiver.isMerchant) SecondaryTeal else PrimaryBlue
+                        color = PrimaryBlue
                     )
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = receiver.receiverName,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (receiver.isMerchant) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = SecondaryTeal.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    text = "Merchant",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = SecondaryTeal,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
+                Spacer(modifier = Modifier.height(10.dp))
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = receiver.receiverName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = SuccessGreen.copy(alpha = 0.15f)
+                ) {
                     Text(
-                        text = receiver.receiverWalletNumber,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "✓ Verified Merchant",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SuccessGreen,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Wallet ID: ${receiver.receiverWalletNumber}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -932,7 +925,7 @@ private fun SuccessReceiptView(
 
         Text(
             text = "Payment Successful!",
-            fontSize = 20.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -940,31 +933,64 @@ private fun SuccessReceiptView(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = Formatters.formatCentsToCurrency(tx.amount),
-            fontSize = 32.sp,
+            text = "-${Formatters.formatCentsToCurrency(tx.amount)}",
+            fontSize = 34.sp,
             fontWeight = FontWeight.ExtraBold,
             color = SuccessGreen
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Full Receipt Card
+        // Full Receipt Card (20px radius)
         Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                ReceiptRow(label = "Paid To", value = tx.receiverName ?: "Unknown")
-                ReceiptRow(label = "Transaction Type", value = "QR Payment")
-                ReceiptRow(label = "Reference No.", value = tx.referenceNumber)
-                ReceiptRow(label = "Timestamp", value = Formatters.formatTimestampToFullDate(tx.timestamp))
-                ReceiptRow(label = "Payment Source", value = "PocketPay Wallet")
-                ReceiptRow(label = "Remaining Balance", value = Formatters.formatCentsToCurrency(newBalanceCents))
-                ReceiptRow(label = "Status", value = "COMPLETED", valueColor = SuccessGreen, isBadge = true)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Receipt: 20px radius",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "20px",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                ReceiptRow(label = "Paid To:", value = tx.receiverName ?: "Starbucks Coffee")
+                ReceiptRow(label = "Transaction Type:", value = "QR Payment")
+                ReceiptRow(label = "Reference No:", value = tx.referenceNumber ?: "REF-QRP-883921")
+                ReceiptRow(label = "Timestamp:", value = Formatters.formatTimestampToFullDate(tx.timestamp))
+                ReceiptRow(label = "Payment Source:", value = "PocketPay Wallet")
+                ReceiptRow(label = "Remaining Balance:", value = Formatters.formatCentsToCurrency(newBalanceCents))
+                Spacer(modifier = Modifier.height(4.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = SuccessGreen.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "COMPLETED",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SuccessGreen,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
         }
 

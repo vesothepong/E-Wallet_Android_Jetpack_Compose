@@ -49,14 +49,14 @@ class AuthBusinessLogicTest {
 
     @Test
     fun testLoginWithCorrectDemoEmailAndPinSucceeds() {
-        val result = repository.login("alex.morgan@pocketpay.demo", "1234")
+        val result = repository.login("kantumruy.dev@pocketpay.io", "1234")
         assertTrue("Login with correct email and PIN should succeed", result)
         assertTrue("Repository isAuthenticated should be true", repository.isAuthenticated.value)
     }
 
     @Test
     fun testLoginWithPhoneNumberAndPinSucceeds() {
-        val result = repository.login("+1 (555) 234-5678", "1234")
+        val result = repository.login("+1 (555) 019-8810", "1234")
         assertTrue("Login with phone number should succeed", result)
         assertTrue(repository.isAuthenticated.value)
     }
@@ -70,7 +70,7 @@ class AuthBusinessLogicTest {
 
     @Test
     fun testLoginWithWrongPinFails() {
-        val result = repository.login("alex.morgan@pocketpay.demo", "9999")
+        val result = repository.login("kantumruy.dev@pocketpay.io", "9999")
         assertFalse("Login with wrong PIN should fail", result)
         assertFalse("Repository isAuthenticated should remain false", repository.isAuthenticated.value)
     }
@@ -100,7 +100,7 @@ class AuthBusinessLogicTest {
 
     @Test
     fun testLogoutRevokesAuthentication() {
-        repository.login("alex.morgan@pocketpay.demo", "1234")
+        repository.login("kantumruy.dev@pocketpay.io", "1234")
         assertTrue(repository.isAuthenticated.value)
 
         repository.logout()
@@ -157,13 +157,13 @@ class AuthBusinessLogicTest {
 
         // 1-Tap Demo Fill
         authViewModel.fillDemoUser()
-        assertEquals("alex.morgan@pocketpay.demo", authViewModel.uiState.value.identifierInput)
+        assertEquals("kantumruy.dev@pocketpay.io", authViewModel.uiState.value.identifierInput)
         assertEquals("1234", authViewModel.uiState.value.pinInput)
     }
 
     @Test
     fun testResetDemoDataRevertsAuthAndOnboarding() {
-        repository.login("alex.morgan@pocketpay.demo", "1234")
+        repository.login("kantumruy.dev@pocketpay.io", "1234")
         repository.completeOnboarding()
         assertTrue(repository.isAuthenticated.value)
         assertTrue(repository.isOnboardingCompleted.value)

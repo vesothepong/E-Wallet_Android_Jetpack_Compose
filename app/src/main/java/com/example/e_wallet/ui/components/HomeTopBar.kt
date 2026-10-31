@@ -13,66 +13,82 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.e_wallet.model.User
 import com.example.e_wallet.ui.theme.ExpenseRose
+import com.example.e_wallet.ui.theme.LightTextSecondary
 import com.example.e_wallet.ui.theme.PrimaryBlue
 import com.example.e_wallet.ui.theme.SuccessGreen
 
+/**
+ * Screen 4: Top App Header
+ * Left: Purple avatar circle 'K' with anchored green status dot, "Welcome back,", "Kantumruy Dev"
+ * Right: Circular theme toggle (Sun icon) and Notification bell with red badge dot
+ */
 @Composable
 fun HomeTopBar(
     user: User?,
     unreadNotificationsCount: Int,
     onNotificationClick: () -> Unit,
-    onResetDemoClick: () -> Unit,
+    onThemeToggleClick: () -> Unit,
     modifier: Modifier = Modifier,
     onProfileClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Left: Avatar + Greeting
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable(onClick = onProfileClick)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = PrimaryBlue,
-                modifier = Modifier
-                    .size(46.dp)
-                    .clickable(onClick = onProfileClick)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val initials = user?.fullName
-                        ?.split(" ")
-                        ?.filter { it.isNotBlank() }
-                        ?.mapNotNull { it.firstOrNull()?.toString() }
-                        ?.take(2)
-                        ?.joinToString("")
-                        ?.ifBlank { "AM" } ?: "AM"
-
+            Box(modifier = Modifier.size(46.dp)) {
+                // Purple/Indigo Avatar Circle
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF7C3AED)),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = initials,
+                        text = "K",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 18.sp
+                    )
+                }
+
+                // Anchored Emerald Green Status Dot (10x10)
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .align(Alignment.BottomEnd)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .padding(1.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .clip(CircleShape)
+                            .background(SuccessGreen)
                     )
                 }
             }
@@ -80,72 +96,75 @@ fun HomeTopBar(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Hello, ${user?.fullName ?: "Demo User"} 👋",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .background(SuccessGreen, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "Demo Mode • Active",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = "Welcome back,",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = user?.fullName?.ifBlank { "Kantumruy Dev" } ?: "Kantumruy Dev",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
 
-        // Right Actions: Sync/Reset & Notifications
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = onResetDemoClick,
-                modifier = Modifier.size(40.dp)
+        // Right: Theme Toggle & Notification Bell
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Theme Toggle Button (Sun)
+            Surface(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onThemeToggleClick),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
             ) {
-                Icon(
-                    imageVector = PocketPayIcons.Refresh,
-                    contentDescription = "Reset Demo Data",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = PocketPayIcons.Sun,
+                        contentDescription = "Toggle Theme",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
-            IconButton(
-                onClick = onNotificationClick,
-                modifier = Modifier.size(40.dp)
+            // Notification Bell with Red Badge Dot
+            Surface(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onNotificationClick),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
             ) {
-                BadgedBox(
-                    badge = {
-                        if (unreadNotificationsCount > 0) {
-                            Badge(
-                                containerColor = ExpenseRose,
-                                contentColor = Color.White
-                            ) {
-                                Text(
-                                    text = unreadNotificationsCount.toString(),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = PocketPayIcons.Notifications,
                         contentDescription = "Notifications",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
                     )
+
+                    if (unreadNotificationsCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .align(Alignment.TopEnd)
+                                .padding(end = 4.dp, top = 4.dp)
+                                .clip(CircleShape)
+                                .background(ExpenseRose)
+                        )
+                    }
                 }
             }
         }

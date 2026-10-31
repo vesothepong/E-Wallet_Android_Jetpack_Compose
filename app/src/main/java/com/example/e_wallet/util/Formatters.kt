@@ -94,4 +94,14 @@ object Formatters {
         val sdf = SimpleDateFormat("MMM dd, yyyy • h:mm a", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
+
+    fun formatTimestampToDate(timestamp: Long): String {
+        val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        return sdf.format(Date(timestamp))
+    }
+
+    fun formatTimestampToDateTime(timestamp: Long): String {
+        val sdf = SimpleDateFormat("MMM dd, yyyy, h:mm a", Locale.getDefault())
+        return sdf.format(Date(timestamp))
+    }
 }

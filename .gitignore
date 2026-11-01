@@ -20,3 +20,13 @@ local.properties
 .idea/deviceManager.xml
 *.iml
 .DS_Store
+
+# Environment & Secrets
+.env
+*.env
+backend/.env
+
+# Backend Database & Dependencies
+*.db
+backend/wallet.db
+node_modules/

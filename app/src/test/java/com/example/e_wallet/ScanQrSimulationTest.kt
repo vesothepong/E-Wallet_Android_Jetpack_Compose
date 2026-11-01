@@ -287,4 +287,30 @@ class ScanQrSimulationTest {
         assertEquals(3500L, finalState.completedTransaction?.amount)
         assertEquals("Sarah Chen", finalState.completedTransaction?.receiverName)
     }
+
+    @Test
+    fun testBakongKhqrParsingExtractsMerchantAndAmount() {
+        val khqrPayload = "00020101021229340010bakong@nbc0116vesothepong@abaa52045411530384054044.505802KH5912Brown Coffee6010Phnom Penh6304CA27"
+        val parsed = QrCodeParser.parse(khqrPayload, emptyList())
+
+        assertNotNull(parsed)
+        assertEquals("Brown Coffee", parsed?.receiverName)
+        assertEquals("vesothepong@abaa", parsed?.receiverWalletNumber)
+        assertEquals(450L, parsed?.presetAmountCents) // $4.50 -> 450 cents
+        assertTrue(parsed?.isMerchant ?: false)
+        assertEquals("Bakong KHQR Payment", parsed?.merchantCategory)
+    }
+
+    @Test
+    fun testDirectBakongAccountParsing() {
+        val directAccount = "012888999@wing"
+        val parsed = QrCodeParser.parse(directAccount, emptyList())
+
+        assertNotNull(parsed)
+        assertEquals("Wing Bank (012888999@wing)", parsed?.receiverName)
+        assertEquals("012888999@wing", parsed?.receiverWalletNumber)
+        assertNull(parsed?.presetAmountCents)
+        assertEquals("Cambodian Bank Transfer", parsed?.merchantCategory)
+    }
 }
+

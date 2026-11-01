@@ -410,22 +410,31 @@ class InMemoryWalletRepository : WalletRepository {
 
     private val defaultBankAccounts = listOf(
         BankAccount(
-            accountId = "bnk_001",
-            bankName = "Chase Bank Checking",
-            accountType = "Checking",
-            accountNumberMasked = "•••• 4412",
-            routingNumberMasked = "•••• 0210",
+            accountId = "bnk_aba_01",
+            bankName = "ABA Bank (Bakong)",
+            accountType = "Checking / Bakong",
+            accountNumberMasked = "•••• 8821",
+            routingNumberMasked = "vesothepong@abaa",
             isPrimary = true,
-            balanceCents = 832000L // $8,320.00
+            balanceCents = 850000L // $8,500.00
         ),
         BankAccount(
-            accountId = "bnk_002",
-            bankName = "Bank of America Savings",
-            accountType = "Savings",
-            accountNumberMasked = "•••• 9011",
-            routingNumberMasked = "•••• 0440",
+            accountId = "bnk_wing_02",
+            bankName = "Wing Bank (Bakong)",
+            accountType = "Savings / Bakong",
+            accountNumberMasked = "•••• 3302",
+            routingNumberMasked = "012888999@wing",
             isPrimary = false,
             balanceCents = 1450000L // $14,500.00
+        ),
+        BankAccount(
+            accountId = "bnk_acleda_03",
+            bankName = "ACLEDA Bank",
+            accountType = "Checking",
+            accountNumberMasked = "•••• 7714",
+            routingNumberMasked = "acleda_user@aclb",
+            isPrimary = false,
+            balanceCents = 620000L // $6,200.00
         )
     )
 
@@ -1932,9 +1941,9 @@ class InMemoryWalletRepository : WalletRepository {
 
 
 /**
- * Shared provider ensuring ViewModels observe the same in-memory repository instance.
+ * Shared provider providing the live network-backed repository with offline resilience.
  */
 object WalletRepositoryProvider {
-    val repository: WalletRepository by lazy { InMemoryWalletRepository() }
+    var repository: WalletRepository = NetworkWalletRepository()
 }
 

@@ -144,26 +144,26 @@ fun WithdrawBottomSheet(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFFE11D48).copy(alpha = 0.12f)),
+                                .background(Color(0xFF005A9C).copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "BoA",
+                                text = "ABA",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFE11D48)
+                                color = Color(0xFF005A9C)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Bank of America Checking",
+                                text = "ABA Bank (Bakong)",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "•••• 9011",
+                                text = "vesothepong@abaa •••• 8821",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -303,8 +303,8 @@ fun WithdrawBottomSheet(
                         scope.launch {
                             repository.withdraw(
                                 amountCents = amountCents,
-                                note = "Withdrawal to Bank of America Checking",
-                                destinationDescription = "Bank of America Checking (•••• 9011)",
+                                note = "Withdrawal to ABA Bank (Bakong)",
+                                destinationDescription = "ABA Bank Checking (vesothepong@abaa)",
                                 feeCents = feeCents
                             )
                             isProcessing = false

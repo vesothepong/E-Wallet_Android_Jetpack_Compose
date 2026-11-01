@@ -142,19 +142,31 @@ fun DepositBottomSheet(
             Spacer(modifier = Modifier.height(10.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Source 1: Chase
+                // Source 1: ABA Bank (Bakong)
                 FundingSourceItem(
-                    title = "Chase Checking Account",
-                    subtitle = "•••• 4412",
-                    iconColor = Color(0xFF117ACA),
+                    title = "ABA Bank (Bakong)",
+                    subtitle = "vesothepong@abaa •••• 8821",
+                    iconColor = Color(0xFF005A9C),
                     iconContent = {
-                        Text(text = "C", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = "ABA", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     },
                     isSelected = selectedSource == 0,
                     onClick = { selectedSource = 0 }
                 )
 
-                // Source 2: PocketPay Visa Debit Card
+                // Source 2: Wing Bank (Bakong)
+                FundingSourceItem(
+                    title = "Wing Bank (Bakong)",
+                    subtitle = "012888999@wing •••• 3302",
+                    iconColor = Color(0xFF86B817),
+                    iconContent = {
+                        Text(text = "WING", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                    },
+                    isSelected = selectedSource == 1,
+                    onClick = { selectedSource = 1 }
+                )
+
+                // Source 3: PocketPay Visa Debit Card
                 FundingSourceItem(
                     title = "PocketPay Visa Debit Card",
                     subtitle = "•••• 5521",
@@ -162,16 +174,6 @@ fun DepositBottomSheet(
                     iconContent = {
                         Text(text = "P", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     },
-                    isSelected = selectedSource == 1,
-                    onClick = { selectedSource = 1 }
-                )
-
-                // Source 3: + Link New Bank Account
-                FundingSourceItem(
-                    title = "+ Link New Bank Account",
-                    subtitle = "Instant Plaid Verification",
-                    iconColor = Color.Transparent,
-                    iconContent = null,
                     isSelected = selectedSource == 2,
                     onClick = { selectedSource = 2 }
                 )
@@ -296,10 +298,15 @@ fun DepositBottomSheet(
                     if (amountCents > 0) {
                         isProcessing = true
                         scope.launch {
+                            val sourceDesc = when (selectedSource) {
+                                0 -> "ABA Bank (Bakong)"
+                                1 -> "Wing Bank (Bakong)"
+                                else -> "PocketPay Visa Debit Card"
+                            }
                             repository.deposit(
                                 amountCents = amountCents,
-                                note = "Deposit via Chase Checking •••• 4412",
-                                sourceDescription = "Chase Checking Account"
+                                note = "Deposit via $sourceDesc",
+                                sourceDescription = sourceDesc
                             )
                             isProcessing = false
                             onDismiss()

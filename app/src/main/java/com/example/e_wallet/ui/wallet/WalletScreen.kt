@@ -322,24 +322,24 @@ fun WalletScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Bank Account 1: Chase Bank Checking ($8,320.00)
+            // Bank Account 1: ABA Bank (Bakong) ($8,500.00)
             BankAccountRow(
-                bankName = "Chase Bank",
+                bankName = "ABA Bank (Bakong)",
                 accountType = "Checking",
-                last4 = "4412",
-                balance = "$8,320.00",
-                iconColor = Color(0xFF1E3A8A)
+                last4 = "8821",
+                balance = "$8,500.00",
+                iconColor = Color(0xFF005A9C)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Bank Account 2: Bank of America Savings ($14,500.00)
+            // Bank Account 2: Wing Bank (Bakong) ($14,500.00)
             BankAccountRow(
-                bankName = "Bank of America",
+                bankName = "Wing Bank (Bakong)",
                 accountType = "Savings",
-                last4 = "9011",
+                last4 = "3302",
                 balance = "$14,500.00",
-                iconColor = Color(0xFFDC2626)
+                iconColor = Color(0xFF86B817)
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -746,8 +746,8 @@ private fun AddBankBottomSheet(
                 OutlinedTextField(
                     value = bankName,
                     onValueChange = onBankNameChanged,
-                    label = { Text("Bank / Institution Name") },
-                    placeholder = { Text("e.g. Wells Fargo") },
+                    label = { Text("Bank Name or Bakong Account ID") },
+                    placeholder = { Text("e.g. ABA Bank or your_account@abaa") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
